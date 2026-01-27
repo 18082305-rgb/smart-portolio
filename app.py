@@ -27,7 +27,3 @@ for text, color in ads:
 st.markdown("---")
 if st.button("🚀 Start Analysis"):
     st.experimental_set_query_params(page="analysis")  # سينتقل للصفحة الثانية
-
-# ---- GIF أسفل الصفحة (Finance / Stock Market theme) ----
-st.markdown("---")
-st.image("https://media.giphy.com/media/xT9IgIc0lryrxvqVGM/giphy.gif", width=400)
