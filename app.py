@@ -42,12 +42,7 @@ if st.session_state['page'] == 'landing':
     if st.button("🚀 Start Analysis"):
         st.session_state['page'] = 'analysis'
 
-    # ---- Elegant Money GIF centered at the bottom ----
-    st.markdown("""
-    <div style="text-align:center; margin-top:30px;">
-        <img src="https://media.giphy.com/media/26gssIytJvy1b1THO/giphy.gif" width="400">
-    </div>
-    """, unsafe_allow_html=True)
+    
 
 # ==============================
 # ANALYSIS PAGE
@@ -183,3 +178,4 @@ elif st.session_state['page'] == 'analysis':
     ax2.set_ylabel("Expected Profit/Loss (%)")
     ax2.set_title("Expected Profit/Loss per Stock")
     st.pyplot(fig2)
+
