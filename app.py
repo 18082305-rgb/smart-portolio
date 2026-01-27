@@ -16,15 +16,11 @@ colors = {
 
 st.set_page_config(page_title="Smart Portfolio", layout="wide")
 
-# Upload files
-uploaded_files = st.file_uploader(
-    "Upload stock files (Omantel, Ooredoo, ...)", 
-    type=['xlsx'], accept_multiple_files=True
-)
-files_dict = {file.name:file for file in uploaded_files}
-if not files_dict:
-    st.info("Please upload at least one Excel file.")
-    st.stop()
+# ✅ Files are already included in the folder
+files_dict = {
+    "Omantel.xlsx": "Omantel.xlsx",
+    "Ooredoo.xlsx": "Ooredoo.xlsx"
+}
 
 stock_choice = st.selectbox("Select Stock", list(files_dict.keys()))
 
@@ -129,21 +125,21 @@ ax.grid(True)
 st.pyplot(fig)
 
 # Compare Omantel vs Ooredoo
-omantel_file = next((f for f in files_dict if "omantel" in f.lower()), None)
-ooredoo_file = next((f for f in files_dict if "ooredoo" in f.lower()), None)
-if omantel_file and ooredoo_file:
-    df_omantel = process_stock_file(files_dict[omantel_file])
-    df_ooredoo = process_stock_file(files_dict[ooredoo_file])
-    stock1, stock2 = compare_stocks("Omantel", df_omantel, "Ooredoo", df_ooredoo, horizon_days)
+omantel_file = files_dict["Omantel.xlsx"]
+ooredoo_file = files_dict["Ooredoo.xlsx"]
 
-    st.subheader("Stock Comparison: Omantel vs Ooredoo")
-    st.write(pd.DataFrame([stock1, stock2]))
+df_omantel = process_stock_file(omantel_file)
+df_ooredoo = process_stock_file(ooredoo_file)
+stock1, stock2 = compare_stocks("Omantel", df_omantel, "Ooredoo", df_ooredoo, horizon_days)
 
-    # Bar chart of expected profit
-    fig2, ax2 = plt.subplots(figsize=(6,4))
-    ax2.bar(["Omantel", "Ooredoo"], [stock1["Profit %"], stock2["Profit %"]],
-            color=["green" if stock1["Profit %"]>0 else "red",
-                   "green" if stock2["Profit %"]>0 else "red"])
-    ax2.set_ylabel("Expected Profit/Loss (%)")
-    ax2.set_title("Expected Profit/Loss per Stock")
-    st.pyplot(fig2)
+st.subheader("Stock Comparison: Omantel vs Ooredoo")
+st.write(pd.DataFrame([stock1, stock2]))
+
+# Bar chart of expected profit
+fig2, ax2 = plt.subplots(figsize=(6,4))
+ax2.bar(["Omantel", "Ooredoo"], [stock1["Profit %"], stock2["Profit %"]],
+        color=["green" if stock1["Profit %"]>0 else "red",
+               "green" if stock2["Profit %"]>0 else "red"])
+ax2.set_ylabel("Expected Profit/Loss (%)")
+ax2.set_title("Expected Profit/Loss per Stock")
+st.pyplot(fig2)
