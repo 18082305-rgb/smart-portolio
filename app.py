@@ -1,8 +1,3 @@
-# ===============================
-# Smart Portfolio - Oman Stock Market
-# Streamlit Version
-# ===============================
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -11,9 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 import matplotlib.pyplot as plt
 
-# ===============================
 # Colors
-# ===============================
 colors = {
     "primary": "#8B307F",
     "profit": "#00AA00",
@@ -23,14 +16,11 @@ colors = {
 
 st.set_page_config(page_title="Smart Portfolio", layout="wide")
 
-# ===============================
-# File upload
-# ===============================
+# Upload files
 uploaded_files = st.file_uploader(
-    "Upload stock files (e.g., Omantel, Ooredoo, ...)", 
+    "Upload stock files (Omantel, Ooredoo, ...)", 
     type=['xlsx'], accept_multiple_files=True
 )
-
 files_dict = {file.name:file for file in uploaded_files}
 if not files_dict:
     st.info("Please upload at least one Excel file.")
@@ -40,9 +30,7 @@ stock_choice = st.selectbox("Select Stock", list(files_dict.keys()))
 horizon_days = st.selectbox("Prediction Horizon",
                             {"1 Day":1,"1 Week":5,"1 Month":22,"1 Year":252})
 
-# ===============================
 # Helper functions
-# ===============================
 def process_stock_file(file):
     df = pd.read_excel(file)
     df = df[df.iloc[:,0].astype(str).str.contains(r"\d", regex=True)]
@@ -97,9 +85,7 @@ def compare_stocks(name1, df1, name2, df2, horizon):
         }
     return analyze(df1, name1), analyze(df2, name2)
 
-# ===============================
 # Main logic
-# ===============================
 df = process_stock_file(files_dict[stock_choice])
 predicted_price, model, X, y = predict_price(df, horizon_days)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
@@ -116,9 +102,7 @@ elif profit_pct < -1:
 else:
     recommendation, rec_color = "Hold ⚪", colors["hold"]
 
-# ===============================
 # Stock Report
-# ===============================
 st.subheader(f"Stock Report: {stock_choice}")
 st.markdown(f"""
 - **Current Price:** {current_price:.3f} OMR  
@@ -128,9 +112,7 @@ st.markdown(f"""
 - **Recommendation:** <span style="color:{rec_color}">{recommendation}</span>
 """, unsafe_allow_html=True)
 
-# ===============================
 # Plot Actual vs Predicted
-# ===============================
 fig, ax = plt.subplots(figsize=(10,4))
 ax.plot(df["Date"], df["Close"], label="Actual Price", color="blue")
 ax.scatter(future_date, predicted_price, color="purple", s=100, label="Predicted Price")
@@ -141,9 +123,7 @@ ax.legend()
 ax.grid(True)
 st.pyplot(fig)
 
-# ===============================
 # Compare Omantel vs Ooredoo
-# ===============================
 omantel_file = next((f for f in files_dict if "omantel" in f.lower()), None)
 ooredoo_file = next((f for f in files_dict if "ooredoo" in f.lower()), None)
 if omantel_file and ooredoo_file:
