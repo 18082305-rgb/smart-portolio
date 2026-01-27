@@ -1,6 +1,6 @@
-bcrypt
+streamlit
 pandas
 numpy
-scikit-learn
 matplotlib
-streamlit
+scikit-learn
+openpyxl
