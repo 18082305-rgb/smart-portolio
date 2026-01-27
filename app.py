@@ -6,35 +6,45 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 import matplotlib.pyplot as plt
 
+# ------------------------------
 # Page config
+# ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
+# ---- Initialize session_state ----
+if 'start_analysis' not in st.session_state:
+    st.session_state['start_analysis'] = False
+
 # ---- Welcome Page ----
-st.markdown("<h1 style='text-align: center; color: #8B307F;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; color: #6882BB;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
-st.markdown("---")
-st.markdown("""
-<p style='text-align:center; font-size:18px;'>
-Predict stock prices, view confidence scores, and compare top stocks like Omantel & Ooredoo.
-</p>
-""", unsafe_allow_html=True)
+if not st.session_state['start_analysis']:
+    st.markdown("<h1 style='text-align: center; color: #8B307F; font-size:50px;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #6882BB; font-size:28px;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
+    st.markdown("---")
 
-# Start Analysis button
-if st.button("🚀 Start Analysis"):
-    st.session_state.start_analysis = True
+    # ---- Big colored info boxes (advertisements) ----
+    ads = [
+        ("📈 Predict stock prices before the market moves!", "#8B307F"),
+        ("🤖 Powered confidence scores for Omantel & Ooredoo!", "#00AA00"),
+        ("📊 Compare top stocks in seconds!", "#FF6600"),
+        ("💡 Make smarter investment decisions today!", "#8B307F")
+    ]
 
-# Initialize session state
-if "start_analysis" not in st.session_state:
-    st.session_state.start_analysis = False
+    for text, color in ads:
+        st.markdown(f"""
+        <div style='background-color:{color}; padding:25px; border-radius:15px; margin-bottom:15px; color:#FFFFFF; text-align:center; font-size:24px; font-weight:bold;'>
+            {text}
+        </div>
+        """, unsafe_allow_html=True)
 
-# --------------------
-# Main app (after button)
-# --------------------
-if st.session_state.start_analysis:
+    # ---- Start Analysis button ----
+    if st.button("🚀 Start Analysis"):
+        st.session_state['start_analysis'] = True
 
+# ---- Main Analysis Page ----
+if st.session_state['start_analysis']:
     st.success("ARAS Loaded! Stock analysis starts below...")
 
-    # ---- Files are preloaded ----
+    # ---- Preloaded stock files (تأكدي من رفعهم في نفس مجلد التطبيق) ----
     files_dict = {
         "Omantel.xlsx": "Omantel.xlsx",
         "Ooredoo.xlsx": "Ooredoo.xlsx"
@@ -48,7 +58,7 @@ if st.session_state.start_analysis:
         format_func=lambda x: x[0]
     )[1]
 
-    # ----- Helper functions -----
+    # ---- Helper functions ----
     def process_stock_file(file):
         df = pd.read_excel(file)
         df = df[df.iloc[:,0].astype(str).str.contains(r"\d", regex=True)]
@@ -119,13 +129,16 @@ if st.session_state.start_analysis:
     else:
         recommendation, rec_color = "Hold ⚪", "#FFA500"
 
+    # ---- Display report in colored box ----
     st.subheader(f"Stock Report: {stock_choice}")
     st.markdown(f"""
+    <div style='background-color:#8B307F; padding:20px; border-radius:15px; color:#FFFFFF; margin-bottom:15px; font-size:20px;'>
     - **Current Price:** {current_price:.3f} OMR  
     - **Predicted Price ({horizon_days} days):** {predicted_price:.3f} OMR  
     - **Profit Expectation:** {profit_pct:.2f}%  
     - **Confidence Score:** {confidence:.1f}%  
     - **Recommendation:** <span style="color:{rec_color}">{recommendation}</span>
+    </div>
     """, unsafe_allow_html=True)
 
     # Actual vs Predicted chart
@@ -155,4 +168,3 @@ if st.session_state.start_analysis:
     ax2.set_ylabel("Expected Profit/Loss (%)")
     ax2.set_title("Expected Profit/Loss per Stock")
     st.pyplot(fig2)
-
