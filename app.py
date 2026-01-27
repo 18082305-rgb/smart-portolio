@@ -27,8 +27,13 @@ if not files_dict:
     st.stop()
 
 stock_choice = st.selectbox("Select Stock", list(files_dict.keys()))
-horizon_days = st.selectbox("Prediction Horizon",
-                            {"1 Day":1,"1 Week":5,"1 Month":22,"1 Year":252})
+
+# ✅ Fix TypeError: use list of tuples
+horizon_days = st.selectbox(
+    "Prediction Horizon",
+    [("1 Day", 1), ("1 Week", 5), ("1 Month", 22), ("1 Year", 252)],
+    format_func=lambda x: x[0]
+)[1]  # get numeric value
 
 # Helper functions
 def process_stock_file(file):
