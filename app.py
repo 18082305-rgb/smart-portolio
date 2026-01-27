@@ -15,64 +15,9 @@ st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 if 'page' not in st.session_state:
     st.session_state['page'] = 'landing'
 
-# ---- HELPER FUNCTIONS ----
-def process_stock_file(file):
-    df = pd.read_excel(file)
-    df = df[df.iloc[:,0].astype(str).str.contains(r"\d", regex=True)]
-    df.columns = ["Date","Open","High","Low","Close","Volume"]
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-    for col in ["Open","High","Low","Close","Volume"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-    df = df.dropna().sort_values("Date")
-    df["MA5"] = df["Close"].rolling(5).mean()
-    df["MA10"] = df["Close"].rolling(10).mean()
-    delta = df["Close"].diff()
-    gain = delta.clip(lower=0).rolling(14).mean()
-    loss = -delta.clip(upper=0).rolling(14).mean()
-    rs = gain / loss
-    df["RSI"] = 100 - (100 / (1 + rs))
-    return df.dropna()
-
-def predict_price(df, horizon):
-    features = ["Open","High","Low","Volume","MA5","MA10","RSI"]
-    X = df[features]
-    y = df["Close"].shift(-horizon)
-    X = X.iloc[:-horizon]
-    y = y.iloc[:-horizon]
-    model = RandomForestRegressor(n_estimators=300, random_state=42)
-    model.fit(X, y)
-    predicted = model.predict(X.iloc[-1].values.reshape(1,-1))[0]
-    return predicted, model, X, y
-
-def confidence_score(model, X_test, y_test):
-    mae = mean_absolute_error(y_test, model.predict(X_test))
-    error_conf = max(0, 1 - mae / y_test.mean())
-    tree_preds = np.array([tree.predict(X_test.iloc[-1].values.reshape(1,-1))[0] for tree in model.estimators_])
-    stability = 1 / (1 + np.std(tree_preds))
-    confidence = (0.6 * error_conf + 0.4 * stability) * 100
-    return min(95, max(40, confidence))
-
-def compare_stocks(name1, df1, name2, df2, horizon):
-    def analyze(df, name):
-        pred, model, X, y = predict_price(df, horizon)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-        conf = confidence_score(model, X_test, y_test)
-        last = df.iloc[-1]
-        profit_pct = (pred - last["Close"]) / last["Close"] * 100
-        trend = "Up ✅" if profit_pct > 0 else "Down ❌"
-        return {
-            "Name": name,
-            "Last Close": last["Close"],
-            "Predicted": pred,
-            "Profit %": profit_pct,
-            "Trend": trend,
-            "Confidence": conf
-        }
-    return analyze(df1, name1), analyze(df2, name2)
-
-# ------------------------------
+# ==============================
 # LANDING PAGE
-# ------------------------------
+# ==============================
 if st.session_state['page'] == 'landing':
     st.markdown("<h1 style='text-align: center; color: #8B307F; font-size:50px;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color: #6882BB; font-size:28px;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
@@ -92,18 +37,27 @@ if st.session_state['page'] == 'landing':
         </div>
         """, unsafe_allow_html=True)
 
+    st.markdown("---")
+
     if st.button("🚀 Start Analysis"):
         st.session_state['page'] = 'analysis'
 
-# ------------------------------
+    # ---- Elegant Money GIF centered at the bottom ----
+    st.markdown("""
+    <div style="text-align:center; margin-top:30px;">
+        <img src="https://media.giphy.com/media/26gssIytJvy1b1THO/giphy.gif" width="400">
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==============================
 # ANALYSIS PAGE
-# ------------------------------
+# ==============================
 elif st.session_state['page'] == 'analysis':
-    # ---- Back to Home Button ----
+    st.subheader("ARAS Loaded! Stock analysis starts below...")
+
+    # ---- Button to go back to home ----
     if st.button("🏠 Back to Home"):
         st.session_state['page'] = 'landing'
-
-    st.success("ARAS Loaded! Stock analysis starts below...")
 
     # ---- Preloaded stock files ----
     files_dict = {
@@ -119,6 +73,62 @@ elif st.session_state['page'] == 'analysis':
         format_func=lambda x: x[0]
     )[1]
 
+    # ----- Helper functions -----
+    def process_stock_file(file):
+        df = pd.read_excel(file)
+        df = df[df.iloc[:,0].astype(str).str.contains(r"\d", regex=True)]
+        df.columns = ["Date","Open","High","Low","Close","Volume"]
+        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+        for col in ["Open","High","Low","Close","Volume"]:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        df = df.dropna().sort_values("Date")
+        df["MA5"] = df["Close"].rolling(5).mean()
+        df["MA10"] = df["Close"].rolling(10).mean()
+        delta = df["Close"].diff()
+        gain = delta.clip(lower=0).rolling(14).mean()
+        loss = -delta.clip(upper=0).rolling(14).mean()
+        rs = gain / loss
+        df["RSI"] = 100 - (100 / (1 + rs))
+        return df.dropna()
+
+    def predict_price(df, horizon):
+        features = ["Open","High","Low","Volume","MA5","MA10","RSI"]
+        X = df[features]
+        y = df["Close"].shift(-horizon)
+        X = X.iloc[:-horizon]
+        y = y.iloc[:-horizon]
+        model = RandomForestRegressor(n_estimators=300, random_state=42)
+        model.fit(X, y)
+        predicted = model.predict(X.iloc[-1].values.reshape(1,-1))[0]
+        return predicted, model, X, y
+
+    def confidence_score(model, X_test, y_test):
+        mae = mean_absolute_error(y_test, model.predict(X_test))
+        error_conf = max(0, 1 - mae / y_test.mean())
+        tree_preds = np.array([tree.predict(X_test.iloc[-1].values.reshape(1,-1))[0] for tree in model.estimators_])
+        stability = 1 / (1 + np.std(tree_preds))
+        confidence = (0.6 * error_conf + 0.4 * stability) * 100
+        return min(95, max(40, confidence))
+
+    def compare_stocks(name1, df1, name2, df2, horizon):
+        def analyze(df, name):
+            pred, model, X, y = predict_price(df, horizon)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+            conf = confidence_score(model, X_test, y_test)
+            last = df.iloc[-1]
+            profit_pct = (pred - last["Close"]) / last["Close"] * 100
+            trend = "Up ✅" if profit_pct > 0 else "Down ❌"
+            return {
+                "Name": name,
+                "Last Close": last["Close"],
+                "Predicted": pred,
+                "Profit %": profit_pct,
+                "Trend": trend,
+                "Confidence": conf
+            }
+        return analyze(df1, name1), analyze(df2, name2)
+
+    # ---- Main Analysis ----
     df = process_stock_file(files_dict[stock_choice])
     predicted_price, model, X, y = predict_price(df, horizon_days)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
@@ -157,7 +167,7 @@ elif st.session_state['page'] == 'analysis':
     ax.grid(True)
     st.pyplot(fig)
 
-    # Compare Omantel vs Ooredoo
+    # ---- Compare Omantel vs Ooredoo ----
     df_omantel = process_stock_file(files_dict["Omantel.xlsx"])
     df_ooredoo = process_stock_file(files_dict["Ooredoo.xlsx"])
     stock1, stock2 = compare_stocks("Omantel", df_omantel, "Ooredoo", df_ooredoo, horizon_days)
