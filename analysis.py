@@ -15,7 +15,7 @@ files_dict = {
     "Ooredoo.xlsx": "Ooredoo.xlsx"
 }
 
-# ---- User selects stock and prediction horizon ----
+# ---- User selects stock and prediction horizon safely ----
 stock_choice = st.selectbox("Select Stock", list(files_dict.keys()))
 horizon_days = st.selectbox(
     "Prediction Horizon",
@@ -25,7 +25,11 @@ horizon_days = st.selectbox(
 
 # ----- Helper functions -----
 def process_stock_file(file):
-    df = pd.read_excel(file)
+    try:
+        df = pd.read_excel(file)
+    except FileNotFoundError:
+        st.error(f"File {file} not found! Please make sure the file exists.")
+        st.stop()
     df = df[df.iloc[:,0].astype(str).str.contains(r"\d", regex=True)]
     df.columns = ["Date","Open","High","Low","Close","Volume"]
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
@@ -63,7 +67,10 @@ def confidence_score(model, X_test, y_test):
 # ---- Main Analysis ----
 df = process_stock_file(files_dict[stock_choice])
 predicted_price, model, X, y = predict_price(df, horizon_days)
+
+# ---- Split data safely ----
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+
 confidence = confidence_score(model, X_test, y_test)
 current_price = df.iloc[-1]["Close"]
 profit_pct = (predicted_price - current_price)/current_price*100
