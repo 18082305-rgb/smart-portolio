@@ -1,81 +1,162 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import bcrypt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 import matplotlib.pyplot as plt
 
-# ------------------------------
-# Page config
-# ------------------------------
-st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
+# ----------------------------------
+# Page Config
+# ----------------------------------
+st.set_page_config(
+    page_title="ARAS | Smart Portfolio",
+    layout="wide"
+)
 
-# ---- Initialize session_state ----
-if 'start_analysis' not in st.session_state:
-    st.session_state['start_analysis'] = False
+# ----------------------------------
+# Users Database (Mock – later DB)
+# ----------------------------------
+USERS = {
+    "admin": bcrypt.hashpw("admin123".encode(), bcrypt.gensalt()),
+    "user1": bcrypt.hashpw("aras2025".encode(), bcrypt.gensalt())
+}
 
-# ---- Welcome Page ----
-if not st.session_state['start_analysis']:
-    st.markdown("<h1 style='text-align: center; color: #8B307F; font-size:50px;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #6882BB; font-size:28px;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
-    st.markdown("---")
+# ----------------------------------
+# Session State
+# ----------------------------------
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
 
-    # ---- Big colored info boxes (advertisements) ----
-    ads = [
-        ("📈 Predict stock prices before the market moves!", "#8B307F"),
-        ("🤖 Powered confidence scores for Omantel & Ooredoo!", "#00AA00"),
-        ("📊 Compare top stocks in seconds!", "#FF6600"),
-        ("💡 Make smarter investment decisions today!", "#8B307F")
-    ]
+if "page" not in st.session_state:
+    st.session_state.page = "login"
 
-    for text, color in ads:
-        st.markdown(f"""
-        <div style='background-color:{color}; padding:25px; border-radius:15px; margin-bottom:15px; color:#FFFFFF; text-align:center; font-size:24px; font-weight:bold;'>
-            {text}
-        </div>
-        """, unsafe_allow_html=True)
+# ----------------------------------
+# Helper: Login Check
+# ----------------------------------
+def check_login(username, password):
+    if username in USERS:
+        return bcrypt.checkpw(password.encode(), USERS[username])
+    return False
 
-    # ---- Start Analysis button ----
-    if st.button("🚀 Start Analysis"):
-        st.session_state['start_analysis'] = True
-
-    # ---- GIF at the bottom, centered ----
+# ----------------------------------
+# Top Navbar
+# ----------------------------------
+def navbar():
     st.markdown("""
-    <div style="text-align:center; margin-top:30px;">
-        <img src="https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif" width="400">
+    <style>
+    .nav {
+        background:#111827;
+        padding:14px 30px;
+        border-radius:12px;
+        display:flex;
+        justify-content:space-between;
+        margin-bottom:25px;
+    }
+    .nav-title {color:white;font-size:22px;font-weight:600;}
+    .nav-links span {color:#D1D5DB;margin-left:25px;}
+    </style>
+
+    <div class="nav">
+        <div class="nav-title">ARAS</div>
+        <div class="nav-links">
+            <span>Market News</span>
+            <span>Today Price</span>
+            <span>Profile</span>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-# ---- Main Analysis Page ----
-if st.session_state['start_analysis']:
-    st.success("ARAS Loaded! Stock analysis starts below...")
+# ==================================
+# LOGIN PAGE
+# ==================================
+if st.session_state.page == "login":
 
-    # ---- Preloaded stock files (تأكدي من رفعهم في نفس مجلد التطبيق) ----
-    files_dict = {
-        "Omantel.xlsx": "Omantel.xlsx",
-        "Ooredoo.xlsx": "Ooredoo.xlsx"
+    st.markdown("<h1 style='text-align:center;'>Login to ARAS</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;color:gray;'>Secure access to smart portfolio analysis</p>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+
+        if st.button("Login", use_container_width=True):
+            if check_login(username, password):
+                st.session_state.authenticated = True
+                st.session_state.page = "home"
+                st.success("Login successful")
+            else:
+                st.error("Invalid username or password")
+
+# ==================================
+# HOME PAGE
+# ==================================
+if st.session_state.authenticated and st.session_state.page == "home":
+
+    navbar()
+
+    col_logout, col_title = st.columns([1,6])
+    with col_logout:
+        if st.button("Logout"):
+            st.session_state.authenticated = False
+            st.session_state.page = "login"
+
+    with col_title:
+        st.markdown("<h2>Welcome to ARAS Dashboard</h2>", unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    features = [
+        "Predict stock prices before the market moves",
+        "AI-powered confidence scores",
+        "Compare Omantel & Ooredoo",
+        "Professional decision support"
+    ]
+
+    for f in features:
+        st.markdown(
+            f"<div style='background:#111827;color:white;padding:25px;border-radius:15px;font-size:22px;margin-bottom:15px;text-align:center;'>"
+            f"{f}</div>", unsafe_allow_html=True)
+
+    if st.button("Go to Analysis"):
+        st.session_state.page = "analysis"
+
+# ==================================
+# ANALYSIS PAGE
+# ==================================
+if st.session_state.authenticated and st.session_state.page == "analysis":
+
+    navbar()
+
+    col_back, col_logout = st.columns([1,1])
+    with col_back:
+        if st.button("← Back Home"):
+            st.session_state.page = "home"
+
+    with col_logout:
+        if st.button("Logout"):
+            st.session_state.authenticated = False
+            st.session_state.page = "login"
+
+    st.markdown("<h2>Stock Analysis</h2>", unsafe_allow_html=True)
+    st.markdown("---")
+
+    files = {
+        "Omantel": "Omantel.xlsx",
+        "Ooredoo": "Ooredoo.xlsx"
     }
 
-    # Stock selection
-    stock_choice = st.selectbox("Select Stock", list(files_dict.keys()))
+    stock = st.selectbox("Select Stock", list(files.keys()))
+    horizon = st.selectbox("Prediction Horizon", [1,5,22,252])
 
-    # Prediction horizon
-    horizon_days = st.selectbox(
-        "Prediction Horizon",
-        [("1 Day", 1), ("1 Week", 5), ("1 Month", 22), ("1 Year", 252)],
-        format_func=lambda x: x[0]
-    )[1]
-
-    # ---- Helper functions ----
-    def process_stock_file(file):
+    def load_data(file):
         df = pd.read_excel(file)
-        df = df[df.iloc[:,0].astype(str).str.contains(r"\d", regex=True)]
+        df = df[df.iloc[:,0].astype(str).str.contains(r"\d")]
         df.columns = ["Date","Open","High","Low","Close","Volume"]
-        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        for col in ["Open","High","Low","Close","Volume"]:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-        df = df.dropna().sort_values("Date")
+        df["Date"] = pd.to_datetime(df["Date"])
+        for c in ["Open","High","Low","Close","Volume"]:
+            df[c] = pd.to_numeric(df[c])
         df["MA5"] = df["Close"].rolling(5).mean()
         df["MA10"] = df["Close"].rolling(10).mean()
         delta = df["Close"].diff()
@@ -85,106 +166,29 @@ if st.session_state['start_analysis']:
         df["RSI"] = 100 - (100 / (1 + rs))
         return df.dropna()
 
-    def predict_price(df, horizon):
-        features = ["Open","High","Low","Volume","MA5","MA10","RSI"]
-        X = df[features]
-        y = df["Close"].shift(-horizon)
-        X = X.iloc[:-horizon]
-        y = y.iloc[:-horizon]
-        model = RandomForestRegressor(n_estimators=300, random_state=42)
-        model.fit(X, y)
-        predicted = model.predict(X.iloc[-1].values.reshape(1,-1))[0]
-        return predicted, model, X, y
+    df = load_data(files[stock])
+    X = df[["Open","High","Low","Volume","MA5","MA10","RSI"]]
+    y = df["Close"].shift(-horizon)
 
-    def confidence_score(model, X_test, y_test):
-        mae = mean_absolute_error(y_test, model.predict(X_test))
-        error_conf = max(0, 1 - mae / y_test.mean())
-        tree_preds = np.array([tree.predict(X_test.iloc[-1].values.reshape(1,-1))[0] for tree in model.estimators_])
-        stability = 1 / (1 + np.std(tree_preds))
-        confidence = (0.6 * error_conf + 0.4 * stability) * 100
-        return min(95, max(40, confidence))
+    X, y = X[:-horizon], y[:-horizon]
 
-    def compare_stocks(name1, df1, name2, df2, horizon):
-        def analyze(df, name):
-            pred, model, X, y = predict_price(df, horizon)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-            conf = confidence_score(model, X_test, y_test)
-            last = df.iloc[-1]
-            profit_pct = (pred - last["Close"]) / last["Close"] * 100
-            trend = "Up ✅" if profit_pct > 0 else "Down ❌"
-            return {
-                "Name": name,
-                "Last Close": last["Close"],
-                "Predicted": pred,
-                "Profit %": profit_pct,
-                "Trend": trend,
-                "Confidence": conf
-            }
-        return analyze(df1, name1), analyze(df2, name2)
+    model = RandomForestRegressor(n_estimators=300, random_state=42)
+    model.fit(X, y)
 
-    # ---- Main Analysis ----
-    df = process_stock_file(files_dict[stock_choice])
-    predicted_price, model, X, y = predict_price(df, horizon_days)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
-    confidence = confidence_score(model, X_test, y_test)
-    current_price = df.iloc[-1]["Close"]
-    profit_pct = (predicted_price - current_price)/current_price*100
-    future_date = df.iloc[-1]["Date"] + pd.Timedelta(days=horizon_days)
+    predicted = model.predict(X.iloc[-1].values.reshape(1,-1))[0]
+    current = df.iloc[-1]["Close"]
+    profit = (predicted-current)/current*100
 
-    if profit_pct > 1:
-        recommendation, rec_color = "Buy 📈", "#00AA00"
-    elif profit_pct < -1:
-        recommendation, rec_color = "Avoid/Sell 📉", "#FF0000"
-    else:
-        recommendation, rec_color = "Hold ⚪", "#FFA500"
-
-    # ---- Display report in colored box ----
-    st.subheader(f"Stock Report: {stock_choice}")
     st.markdown(f"""
-    <div style='background-color:#8B307F; padding:20px; border-radius:15px; color:#FFFFFF; margin-bottom:15px; font-size:20px;'>
-    - **Current Price:** {current_price:.3f} OMR  
-    - **Predicted Price ({horizon_days} days):** {predicted_price:.3f} OMR  
-    - **Profit Expectation:** {profit_pct:.2f}%  
-    - **Confidence Score:** {confidence:.1f}%  
-    - **Recommendation:** <span style="color:{rec_color}">{recommendation}</span>
+    <div style='background:#F9FAFB;padding:25px;border-radius:15px;border:1px solid #E5E7EB;'>
+    <b>Current Price:</b> {current:.3f} OMR<br>
+    <b>Predicted Price:</b> {predicted:.3f} OMR<br>
+    <b>Expected Return:</b> {profit:.2f}%
     </div>
     """, unsafe_allow_html=True)
 
-    # Actual vs Predicted chart
-    fig, ax = plt.subplots(figsize=(10,4))
-    ax.plot(df["Date"], df["Close"], label="Actual Price", color="blue")
-    ax.scatter(future_date, predicted_price, color="purple", s=100, label="Predicted Price")
-    ax.set_title(f"Actual vs Predicted Price: {stock_choice}")
-    ax.set_xlabel("Date")
-    ax.set_ylabel("Price (OMR)")
-    ax.legend()
+    fig, ax = plt.subplots(figsize=(9,4))
+    ax.plot(df["Date"], df["Close"])
+    ax.scatter(df.iloc[-1]["Date"], predicted, s=120)
     ax.grid(True)
     st.pyplot(fig)
-
-    # ---- Compare Omantel vs Ooredoo ----
-    df_omantel = process_stock_file(files_dict["Omantel.xlsx"])
-    df_ooredoo = process_stock_file(files_dict["Ooredoo.xlsx"])
-    stock1, stock2 = compare_stocks("Omantel", df_omantel, "Ooredoo", df_ooredoo, horizon_days)
-
-    st.subheader("Stock Comparison: Omantel vs Ooredoo")
-    st.write(pd.DataFrame([stock1, stock2]))
-
-    # Bar chart
-    fig2, ax2 = plt.subplots(figsize=(6,4))
-    ax2.bar(["Omantel", "Ooredoo"], [stock1["Profit %"], stock2["Profit %"]],
-            color=["green" if stock1["Profit %"]>0 else "red",
-                   "green" if stock2["Profit %"]>0 else "red"])
-    ax2.set_ylabel("Expected Profit/Loss (%)")
-    ax2.set_title("Expected Profit/Loss per Stock")
-    st.pyplot(fig2)
-
-    # ---- GIF at bottom of analysis ----
-    st.markdown("""
-    <div style="text-align:center; margin-top:30px;">
-        <img src="https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif" width="400">
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ---- Back to Home Button ----
-    if st.button("🏠 Back to Home"):
-        st.session_state['start_analysis'] = False
