@@ -3,8 +3,8 @@ import streamlit as st
 st.set_page_config(page_title="ARAS - Welcome", layout="wide")
 
 # ---- Initialize session_state ----
-if 'page' not in st.session_state:
-    st.session_state['page'] = 'landing'
+if st.button("🚀 Start Analysis"):
+    st.session_state['page'] = 'analysis'
 
 # ---- Landing Page ----
 if st.session_state['page'] == 'landing':
@@ -38,3 +38,4 @@ if st.session_state['page'] == 'landing':
 # ---- Analysis Page ----
 elif st.session_state['page'] == 'analysis':
     import pages.stock_analysis
+
