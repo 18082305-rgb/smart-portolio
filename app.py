@@ -15,10 +15,7 @@ st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 if 'page' not in st.session_state:
     st.session_state['page'] = 'landing'
 
-# ------------------------------
-# HELPER FUNCTIONS
-# ------------------------------
-
+# ---- HELPER FUNCTIONS ----
 def process_stock_file(file):
     df = pd.read_excel(file)
     df = df[df.iloc[:,0].astype(str).str.contains(r"\d", regex=True)]
@@ -77,17 +74,17 @@ def compare_stocks(name1, df1, name2, df2, horizon):
 # LANDING PAGE
 # ------------------------------
 if st.session_state['page'] == 'landing':
-    st.markdown("<h1 style='text-align:center; color:#8B307F; font-size:50px;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align:center; color:#6882BB; font-size:28px;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #8B307F; font-size:50px;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #6882BB; font-size:28px;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # Big colored info boxes
     ads = [
         ("📈 Predict stock prices before the market moves!", "#8B307F"),
         ("🤖 Powered confidence scores for Omantel & Ooredoo!", "#00AA00"),
         ("📊 Compare top stocks in seconds!", "#FF6600"),
         ("💡 Make smarter investment decisions today!", "#8B307F")
     ]
+
     for text, color in ads:
         st.markdown(f"""
         <div style='background-color:{color}; padding:25px; border-radius:15px; margin-bottom:15px; color:#FFFFFF; text-align:center; font-size:24px; font-weight:bold;'>
@@ -95,38 +92,33 @@ if st.session_state['page'] == 'landing':
         </div>
         """, unsafe_allow_html=True)
 
-    # Start button
     if st.button("🚀 Start Analysis"):
         st.session_state['page'] = 'analysis'
-
-    # GIF at bottom
-    st.image("https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif", width=400)
 
 # ------------------------------
 # ANALYSIS PAGE
 # ------------------------------
 elif st.session_state['page'] == 'analysis':
-    # Button to go back
+    # ---- Back to Home Button ----
     if st.button("🏠 Back to Home"):
         st.session_state['page'] = 'landing'
-        st.experimental_rerun()
 
     st.success("ARAS Loaded! Stock analysis starts below...")
 
-    # Preloaded stock files
+    # ---- Preloaded stock files ----
     files_dict = {
         "Omantel.xlsx": "Omantel.xlsx",
         "Ooredoo.xlsx": "Ooredoo.xlsx"
     }
 
     stock_choice = st.selectbox("Select Stock", list(files_dict.keys()))
+
     horizon_days = st.selectbox(
         "Prediction Horizon",
         [("1 Day", 1), ("1 Week", 5), ("1 Month", 22), ("1 Year", 252)],
         format_func=lambda x: x[0]
     )[1]
 
-    # Main Analysis
     df = process_stock_file(files_dict[stock_choice])
     predicted_price, model, X, y = predict_price(df, horizon_days)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
@@ -142,7 +134,7 @@ elif st.session_state['page'] == 'analysis':
     else:
         recommendation, rec_color = "Hold ⚪", "#FFA500"
 
-    # Display report
+    # ---- Display report in colored box ----
     st.subheader(f"Stock Report: {stock_choice}")
     st.markdown(f"""
     <div style='background-color:#8B307F; padding:20px; border-radius:15px; color:#FFFFFF; margin-bottom:15px; font-size:20px;'>
