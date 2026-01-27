@@ -7,9 +7,6 @@ st.markdown("<h1 style='text-align: center; color: #8B307F;'>💼 Welcome to ARA
 st.markdown("<h3 style='text-align: center; color: #6882BB;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
 st.markdown("---")
 
-# ---- Elegant GIF ----
-st.image("https://media.giphy.com/media/3o7abld9bq1Zg1xD2g/giphy.gif", width=400)
-
 # ---- Advertisement-like Boxes ----
 ads = [
     ("📈 Predict stock prices before the market moves!", "#8B307F"),
@@ -30,3 +27,7 @@ for text, color in ads:
 st.markdown("---")
 if st.button("🚀 Start Analysis"):
     st.experimental_set_query_params(page="analysis")  # سينتقل للصفحة الثانية
+
+# ---- GIF أسفل الصفحة (Finance / Money theme) ----
+st.markdown("---")
+st.image("https://media.giphy.com/media/3o7abld9bq1Zg1xD2g/giphy.gif", width=400)
