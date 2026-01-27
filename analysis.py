@@ -1,3 +1,4 @@
+# pages/stock_analysis.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -14,6 +15,7 @@ files_dict = {
     "Ooredoo.xlsx": "Ooredoo.xlsx"
 }
 
+# ---- User selects stock and prediction horizon ----
 stock_choice = st.selectbox("Select Stock", list(files_dict.keys()))
 horizon_days = st.selectbox(
     "Prediction Horizon",
@@ -67,6 +69,7 @@ current_price = df.iloc[-1]["Close"]
 profit_pct = (predicted_price - current_price)/current_price*100
 future_date = df.iloc[-1]["Date"] + pd.Timedelta(days=horizon_days)
 
+# ---- Recommendation color ----
 if profit_pct > 1:
     recommendation, rec_color = "Buy 📈", "#00AA00"
 elif profit_pct < -1:
@@ -74,6 +77,7 @@ elif profit_pct < -1:
 else:
     recommendation, rec_color = "Hold ⚪", "#FFA500"
 
+# ---- Display report ----
 st.subheader(f"Stock Report: {stock_choice}")
 st.markdown(f"""
 - **Current Price:** {current_price:.3f} OMR  
@@ -83,7 +87,7 @@ st.markdown(f"""
 - **Recommendation:** <span style="color:{rec_color}">{recommendation}</span>
 """, unsafe_allow_html=True)
 
-# Chart
+# ---- Chart: Actual vs Predicted ----
 fig, ax = plt.subplots(figsize=(10,4))
 ax.plot(df["Date"], df["Close"], label="Actual Price", color="blue")
 ax.scatter(future_date, predicted_price, color="purple", s=100, label="Predicted Price")
