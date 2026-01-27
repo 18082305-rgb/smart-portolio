@@ -1,10 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import bcrypt
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error
 import matplotlib.pyplot as plt
 
 # ----------------------------------
@@ -16,11 +13,11 @@ st.set_page_config(
 )
 
 # ----------------------------------
-# Users Database (Mock – later DB)
+# Users Database (Plain text for testing)
 # ----------------------------------
 USERS = {
-    "admin": bcrypt.hashpw("admin123".encode(), bcrypt.gensalt()),
-    "user1": bcrypt.hashpw("aras2025".encode(), bcrypt.gensalt())
+    "admin": "admin123",
+    "user1": "aras2025"
 }
 
 # ----------------------------------
@@ -36,9 +33,7 @@ if "page" not in st.session_state:
 # Helper: Login Check
 # ----------------------------------
 def check_login(username, password):
-    if username in USERS:
-        return bcrypt.checkpw(password.encode(), USERS[username])
-    return False
+    return username in USERS and USERS[username] == password
 
 # ----------------------------------
 # Top Navbar
@@ -84,8 +79,9 @@ if st.session_state.page == "login":
         if st.button("Login", use_container_width=True):
             if check_login(username, password):
                 st.session_state.authenticated = True
+                st.session_state.username = username
                 st.session_state.page = "home"
-                st.success("Login successful")
+                st.success(f"Login successful! Welcome, {username}")
             else:
                 st.error("Invalid username or password")
 
@@ -103,7 +99,7 @@ if st.session_state.authenticated and st.session_state.page == "home":
             st.session_state.page = "login"
 
     with col_title:
-        st.markdown("<h2>Welcome to ARAS Dashboard</h2>", unsafe_allow_html=True)
+        st.markdown(f"<h2>Welcome to ARAS Dashboard, {st.session_state.username}</h2>", unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -148,7 +144,7 @@ if st.session_state.authenticated and st.session_state.page == "analysis":
     }
 
     stock = st.selectbox("Select Stock", list(files.keys()))
-    horizon = st.selectbox("Prediction Horizon", [1,5,22,252])
+    horizon = st.selectbox("Prediction Horizon (days)", [1,5,22,252])
 
     def load_data(file):
         df = pd.read_excel(file)
@@ -169,7 +165,6 @@ if st.session_state.authenticated and st.session_state.page == "analysis":
     df = load_data(files[stock])
     X = df[["Open","High","Low","Volume","MA5","MA10","RSI"]]
     y = df["Close"].shift(-horizon)
-
     X, y = X[:-horizon], y[:-horizon]
 
     model = RandomForestRegressor(n_estimators=300, random_state=42)
@@ -188,7 +183,10 @@ if st.session_state.authenticated and st.session_state.page == "analysis":
     """, unsafe_allow_html=True)
 
     fig, ax = plt.subplots(figsize=(9,4))
-    ax.plot(df["Date"], df["Close"])
-    ax.scatter(df.iloc[-1]["Date"], predicted, s=120)
+    ax.plot(df["Date"], df["Close"], label="Close Price")
+    ax.scatter(df.iloc[-1]["Date"], predicted, s=150, color='red', label="Predicted")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Price (OMR)")
     ax.grid(True)
+    ax.legend()
     st.pyplot(fig)
