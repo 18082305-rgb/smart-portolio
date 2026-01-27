@@ -7,16 +7,16 @@ st.markdown("<h1 style='text-align: center; color: #8B307F;'>💼 Welcome to ARA
 st.markdown("<h3 style='text-align: center; color: #6882BB;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
 st.markdown("---")
 
-# ---- Animated GIF ----
-st.image("https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif", width=400)
+# ---- Elegant GIF ----
+st.image("https://media.giphy.com/media/3o7abld9bq1Zg1xD2g/giphy.gif", width=400)
 
 # ---- Advertisement-like Boxes ----
 ads = [
-    ("🔥 Predict stock prices before the market moves!", "#8B307F"),
-    ("🚀 Get AI-driven confidence scores for Omantel & Ooredoo!", "#00AA00"),
-    ("📊 Compare top stocks in seconds with our smart analysis!", "#FF6600"),
+    ("📈 Predict stock prices before the market moves!", "#8B307F"),
+    ("🤖 AI-driven confidence scores for Omantel & Ooredoo!", "#00AA00"),
+    ("📊 Compare top stocks in seconds!", "#FF6600"),
     ("💡 Make smarter investment decisions today!", "#8B307F"),
-    ("📈 Track market trends like a pro!", "#00AA00")
+    ("🚀 Track market trends like a pro!", "#00AA00")
 ]
 
 for text, color in ads:
