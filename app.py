@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="ARAS - Welcome", layout="wide")
 
-# ---- Initialize session_state for page navigation ----
+# ---- Initialize session_state ----
 if 'page' not in st.session_state:
     st.session_state['page'] = 'landing'
 
@@ -28,13 +28,11 @@ if st.session_state['page'] == 'landing':
         """, unsafe_allow_html=True)
 
     st.markdown("---")
-    # Button navigates to Analysis page
     if st.button("🚀 Start Analysis"):
         st.session_state['page'] = 'analysis'
-        st.experimental_rerun()
 
-    # ---- Elegant Money GIF at the bottom ----
     st.markdown("---")
+    # Elegant Money GIF at the bottom
     st.image("https://media.giphy.com/media/26gssIytJvy1b1THO/giphy.gif", width=400)
 
 # ---- Analysis Page ----
