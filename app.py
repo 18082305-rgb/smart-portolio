@@ -28,6 +28,6 @@ st.markdown("---")
 if st.button("🚀 Start Analysis"):
     st.experimental_set_query_params(page="analysis")  # سينتقل للصفحة الثانية
 
-# ---- GIF أسفل الصفحة (Finance / Money theme) ----
+# ---- GIF أسفل الصفحة (Finance / Stock Market theme) ----
 st.markdown("---")
-st.image("https://media.giphy.com/media/3o7abld9bq1Zg1xD2g/giphy.gif", width=400)
+st.image("https://media.giphy.com/media/xT9IgIc0lryrxvqVGM/giphy.gif", width=400)
