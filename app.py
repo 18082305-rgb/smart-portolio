@@ -12,17 +12,16 @@ import matplotlib.pyplot as plt
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
 # ---- Initialize session_state ----
-if 'page' not in st.session_state:
-    st.session_state['page'] = 'landing'
+if 'start_analysis' not in st.session_state:
+    st.session_state['start_analysis'] = False
 
-# ==============================
-# LANDING PAGE
-# ==============================
-if st.session_state['page'] == 'landing':
+# ---- Welcome Page ----
+if not st.session_state['start_analysis']:
     st.markdown("<h1 style='text-align: center; color: #8B307F; font-size:50px;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color: #6882BB; font-size:28px;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
+    # ---- Big colored info boxes (advertisements) ----
     ads = [
         ("📈 Predict stock prices before the market moves!", "#8B307F"),
         ("🤖 Powered confidence scores for Omantel & Ooredoo!", "#00AA00"),
@@ -37,38 +36,38 @@ if st.session_state['page'] == 'landing':
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("---")
-
+    # ---- Start Analysis button ----
     if st.button("🚀 Start Analysis"):
-        st.session_state['page'] = 'analysis'
+        st.session_state['start_analysis'] = True
 
-    
+    # ---- GIF at the bottom, centered ----
+    st.markdown("""
+    <div style="text-align:center; margin-top:30px;">
+        <img src="https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif" width="400">
+    </div>
+    """, unsafe_allow_html=True)
 
-# ==============================
-# ANALYSIS PAGE
-# ==============================
-elif st.session_state['page'] == 'analysis':
-    st.subheader("ARAS Loaded! Stock analysis starts below...")
+# ---- Main Analysis Page ----
+if st.session_state['start_analysis']:
+    st.success("ARAS Loaded! Stock analysis starts below...")
 
-    # ---- Button to go back to home ----
-    if st.button("🏠 Back to Home"):
-        st.session_state['page'] = 'landing'
-
-    # ---- Preloaded stock files ----
+    # ---- Preloaded stock files (تأكدي من رفعهم في نفس مجلد التطبيق) ----
     files_dict = {
         "Omantel.xlsx": "Omantel.xlsx",
         "Ooredoo.xlsx": "Ooredoo.xlsx"
     }
 
+    # Stock selection
     stock_choice = st.selectbox("Select Stock", list(files_dict.keys()))
 
+    # Prediction horizon
     horizon_days = st.selectbox(
         "Prediction Horizon",
         [("1 Day", 1), ("1 Week", 5), ("1 Month", 22), ("1 Year", 252)],
         format_func=lambda x: x[0]
     )[1]
 
-    # ----- Helper functions -----
+    # ---- Helper functions ----
     def process_stock_file(file):
         df = pd.read_excel(file)
         df = df[df.iloc[:,0].astype(str).str.contains(r"\d", regex=True)]
@@ -179,3 +178,13 @@ elif st.session_state['page'] == 'analysis':
     ax2.set_title("Expected Profit/Loss per Stock")
     st.pyplot(fig2)
 
+    # ---- GIF at bottom of analysis ----
+    st.markdown("""
+    <div style="text-align:center; margin-top:30px;">
+        <img src="https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif" width="400">
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ---- Back to Home Button ----
+    if st.button("🏠 Back to Home"):
+        st.session_state['start_analysis'] = False
