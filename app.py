@@ -42,9 +42,14 @@ if not st.session_state['start_analysis']:
 
 # ---- Main Analysis Page ----
 if st.session_state['start_analysis']:
+    # ---- Home Button ----
+    if st.button("🏠 Back to Home"):
+        st.session_state['start_analysis'] = False
+        st.experimental_rerun()
+
     st.success("ARAS Loaded! Stock analysis starts below...")
 
-    # ---- Preloaded stock files (تأكدي من رفعهم في نفس مجلد التطبيق) ----
+    # ---- Preloaded stock files ----
     files_dict = {
         "Omantel.xlsx": "Omantel.xlsx",
         "Ooredoo.xlsx": "Ooredoo.xlsx"
