@@ -5,6 +5,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
 
 # ------------------------------
 # Page config
@@ -88,13 +89,6 @@ if st.session_state['start_analysis']:
     # Stock selection
     stock_choice = st.selectbox("Select Stock", list(files_dict.keys()))
 
-    # Prediction horizon
-    horizon_days = st.selectbox(
-        "Prediction Horizon",
-        [("1 Day", 1), ("1 Week", 5), ("1 Month", 22), ("1 Year", 252)],
-        format_func=lambda x: x[0]
-    )[1]
-
     # ---- Helper functions ----
     def process_stock_file(file):
         df = pd.read_excel(file)
@@ -150,8 +144,28 @@ if st.session_state['start_analysis']:
             }
         return analyze(df1, name1), analyze(df2, name2)
 
-    # ---- Main Analysis ----
+    # ---- Load selected stock ----
     df = process_stock_file(files_dict[stock_choice])
+
+    # ---- Date range picker ----
+    st.subheader("Select Prediction Period")
+    min_date = df["Date"].min()
+    max_date = df["Date"].max()
+
+    start_date, end_date = st.date_input(
+        "Select Start and End Dates",
+        value=[min_date, max_date],
+        min_value=min_date,
+        max_value=max_date
+    )
+
+    # ---- حساب horizon_days ----
+    horizon_days = (end_date - start_date).days
+    if horizon_days < 1:
+        st.warning("⚠️ End date must be after start date. Using 1 day as default.")
+        horizon_days = 1
+
+    # ---- Main Prediction ----
     predicted_price, model, X, y = predict_price(df, horizon_days)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
     confidence = confidence_score(model, X_test, y_test)
@@ -166,7 +180,7 @@ if st.session_state['start_analysis']:
     else:
         recommendation, rec_color = "Hold ⚪", "#FFA500"
 
-    # ---- Display report in colored box ----
+    # ---- Display report ----
     st.subheader(f"Stock Report: {stock_choice}")
     st.markdown(f"""
     <div style='background-color:#8B307F; padding:20px; border-radius:15px; color:#FFFFFF; margin-bottom:15px; font-size:20px;'>
@@ -178,7 +192,7 @@ if st.session_state['start_analysis']:
     </div>
     """, unsafe_allow_html=True)
 
-    # Actual vs Predicted chart
+    # ---- Actual vs Predicted Chart ----
     fig, ax = plt.subplots(figsize=(10,4))
     ax.plot(df["Date"], df["Close"], label="Actual Price", color="blue")
     ax.scatter(future_date, predicted_price, color="purple", s=100, label="Predicted Price")
@@ -197,7 +211,7 @@ if st.session_state['start_analysis']:
     st.subheader("Stock Comparison: Omantel vs Ooredoo")
     st.write(pd.DataFrame([stock1, stock2]))
 
-    # Bar chart
+    # ---- Bar chart ----
     fig2, ax2 = plt.subplots(figsize=(6,4))
     ax2.bar(["Omantel", "Ooredoo"], [stock1["Profit %"], stock2["Profit %"]],
             color=["green" if stock1["Profit %"]>0 else "red",
