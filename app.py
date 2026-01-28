@@ -12,12 +12,14 @@ st.set_page_config(page_title="ARAS | Smart Portfolio", layout="wide")
 # -----------------------------
 # Session State Init
 # -----------------------------
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "page" not in st.session_state:
-    st.session_state.page = "login"
-if "users" not in st.session_state:
-    st.session_state.users = {}  # temporary storage for registered accounts
+for key in ["authenticated","page","users","username"]:
+    if key not in st.session_state:
+        if key=="users":
+            st.session_state[key] = {}
+        elif key=="username":
+            st.session_state[key] = ""
+        else:
+            st.session_state[key] = False if key=="authenticated" else "login"
 
 # -----------------------------
 # File Paths (Preloaded Excel)
@@ -66,17 +68,17 @@ def navbar():
 # ==========================
 # REGISTER PAGE
 # ==========================
-if st.session_state.page == "register":
+if st.session_state.page=="register":
     st.markdown("<h1 style='text-align:center;'>Register</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;color:gray;'>Create your ARAS account</p>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;color:gray;font-size:14px;'>Use a valid email (e.g., user@aras.com) and a password of your choice</p>", unsafe_allow_html=True)
 
-    email = st.text_input("Email", placeholder="example@aras.com")
+    email = st.text_input("Email", placeholder="user@aras.com")
     password = st.text_input("Password", type="password")
     password_confirm = st.text_input("Confirm Password", type="password")
 
     if st.button("Register"):
-        if email.strip() == "" or password.strip() == "":
+        if email.strip()=="" or password.strip()=="":
             st.error("Email and Password cannot be empty!")
         elif password != password_confirm:
             st.error("Passwords do not match!")
@@ -85,33 +87,36 @@ if st.session_state.page == "register":
         else:
             st.session_state.users[email] = password
             st.success("Account created successfully! Please login.")
-            st.session_state.page = "login"
+            st.session_state.page="login"
             st.experimental_rerun()
 
     if st.button("Back to Login"):
-        st.session_state.page = "login"
+        st.session_state.page="login"
+        st.experimental_rerun()
 
 # ==========================
 # LOGIN PAGE
 # ==========================
-if st.session_state.page == "login":
+if st.session_state.page=="login":
     st.markdown("<h1 style='text-align:center;'>Login to ARAS</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;color:gray;'>Use your registered email and password</p>", unsafe_allow_html=True)
 
-    email = st.text_input("Email", placeholder="example@aras.com")
+    email = st.text_input("Email", placeholder="user@aras.com")
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
         if email in st.session_state.users and st.session_state.users[email] == password:
-            st.session_state.authenticated = True
-            st.session_state.username = email.split("@")[0]
-            st.session_state.page = "home"
+            st.session_state.authenticated=True
+            st.session_state.username=email.split("@")[0]
+            st.session_state.page="home"
             st.success(f"Login successful! Welcome, {st.session_state.username}")
+            st.experimental_rerun()
         else:
             st.error("Invalid email or password")
 
     if st.button("Create Account"):
-        st.session_state.page = "register"
+        st.session_state.page="register"
+        st.experimental_rerun()
 
 # ==========================
 # HOME PAGE
@@ -123,6 +128,7 @@ if st.session_state.authenticated and st.session_state.page=="home":
         if st.button("Logout"):
             st.session_state.authenticated=False
             st.session_state.page="login"
+            st.experimental_rerun()
     with col_title:
         st.markdown(f"<h2>Welcome, {st.session_state.username}</h2>", unsafe_allow_html=True)
 
@@ -139,9 +145,11 @@ if st.session_state.authenticated and st.session_state.page=="home":
     with col1:
         if st.button("📈 Stock Analysis"):
             st.session_state.page="analysis"
+            st.experimental_rerun()
     with col2:
         if st.button("📊 Stock Comparison"):
             st.session_state.page="comparison"
+            st.experimental_rerun()
 
 # ==========================
 # STOCK ANALYSIS PAGE
@@ -152,10 +160,12 @@ if st.session_state.authenticated and st.session_state.page=="analysis":
     with col_back:
         if st.button("← Back Home"):
             st.session_state.page="home"
+            st.experimental_rerun()
     with col_logout:
         if st.button("Logout"):
             st.session_state.authenticated=False
             st.session_state.page="login"
+            st.experimental_rerun()
 
     st.markdown("<h2>Stock Analysis</h2>", unsafe_allow_html=True)
     st.markdown("---")
@@ -224,10 +234,12 @@ if st.session_state.authenticated and st.session_state.page=="comparison":
     with col_back:
         if st.button("← Back Home"):
             st.session_state.page="home"
+            st.experimental_rerun()
     with col_logout:
         if st.button("Logout"):
             st.session_state.authenticated=False
             st.session_state.page="login"
+            st.experimental_rerun()
 
     st.markdown("<h2>Omantel vs Ooredoo Comparison</h2>", unsafe_allow_html=True)
     st.markdown("---")
