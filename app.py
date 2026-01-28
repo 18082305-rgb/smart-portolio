@@ -19,11 +19,11 @@ if "page" not in st.session_state:
     st.session_state.page = "dashboard"
 
 # -----------------------------
-# Files Preloaded
+# Files Preloaded (في نفس مجلد App.py)
 # -----------------------------
 FILES = {
-    "Omantel": "data/omantel.xlsx",
-    "Ooredoo": "data/ooredoo.xlsx"
+    "Omantel": "عمانتل.xlsx",
+    "Ooredoo": "اوريدو.xlsx"
 }
 
 # -----------------------------
@@ -42,7 +42,7 @@ def top_bar():
             st.stop()
 
 # -----------------------------
-# Load Stock Data
+# RSI Calculation
 # -----------------------------
 def compute_RSI(data, window=14):
     delta = data.diff()
@@ -52,13 +52,17 @@ def compute_RSI(data, window=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
+# -----------------------------
+# Load Stock Data
+# -----------------------------
 def load_stock(stock_name):
     df = pd.read_excel(FILES[stock_name])
-    df["Date"] = pd.to_datetime(df["Date"])
-    df = df.sort_values("Date")
-    df["MA5"] = df["Close"].rolling(5).mean()
-    df["MA10"] = df["Close"].rolling(10).mean()
-    df["RSI"] = compute_RSI(df["Close"],14)
+    df["التاريخ"] = pd.to_datetime(df["التاريخ"])
+    df = df.sort_values("التاريخ")
+    # مؤشرات
+    df["MA5"] = df["الإغلاق"].rolling(5).mean()
+    df["MA10"] = df["الإغلاق"].rolling(10).mean()
+    df["RSI"] = compute_RSI(df["الإغلاق"])
     df.dropna(inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
@@ -95,10 +99,9 @@ def analysis_page():
 
     stock = st.selectbox("Select Stock", list(FILES.keys()))
     df_full = load_stock(stock)
-    min_date = df_full["Date"].min()
-    max_date = df_full["Date"].max()
+    min_date = df_full["التاريخ"].min()
+    max_date = df_full["التاريخ"].max()
 
-    # اختيار الفترة
     col1, col2 = st.columns(2)
     with col1:
         start_date = st.date_input("From", min_value=min_date.date(), max_value=max_date.date(), value=min_date.date())
@@ -109,33 +112,32 @@ def analysis_page():
         st.error("Start date must be before End date")
         return
 
-    df = df_full[(df_full["Date"].dt.date >= start_date) & (df_full["Date"].dt.date <= end_date)].copy()
+    df = df_full[(df_full["التاريخ"].dt.date >= start_date) & (df_full["التاريخ"].dt.date <= end_date)].copy()
     if len(df)<10:
         st.warning("Not enough data for this period")
         return
 
     # Features & Model
     X = df[["MA5","MA10","RSI"]]
-    y = df["Close"]
+    y = df["الإغلاق"]
     model = RandomForestRegressor(n_estimators=200, random_state=42)
     model.fit(X,y)
 
-    prediction = model.predict(X.tail(1))[0]
-    current = df.iloc[-1]["Close"]
-    expected_return = (prediction-current)/current*100
+    predicted = model.predict(X.tail(1))[0]
+    current = df.iloc[-1]["الإغلاق"]
+    expected_return = (predicted-current)/current*100
 
     # Indicators
     rsi_val = df.iloc[-1]["RSI"]
     rsi_status = ("Overbought" if rsi_val>70 else "Oversold" if rsi_val<30 else "Normal")
-    trend = "Uptrend" if df["Close"].iloc[-1] > df["Close"].iloc[-5] else "Downtrend"
-    risk = "Stable" if df["Close"].pct_change().std()<0.02 else "High Volatility"
+    trend = "Uptrend" if df["الإغلاق"].iloc[-1] > df["الإغلاق"].iloc[-5] else "Downtrend"
+    risk = "Stable" if df["الإغلاق"].pct_change().std()<0.02 else "High Volatility"
     recommendation = "BUY" if expected_return>3 else "Avoid/Sell" if expected_return<-3 else "HOLD"
 
-    # Display Info
     st.markdown(f"""
     <div style='background:#F9FAFB;padding:20px;border-radius:12px;border:1px solid #E5E7EB'>
     <b>Current Price:</b> {current:.3f} OMR<br>
-    <b>Predicted Price:</b> {prediction:.3f} OMR<br>
+    <b>Predicted Price:</b> {predicted:.3f} OMR<br>
     <b>Expected Return:</b> {expected_return:.2f}%<br>
     <b>RSI:</b> {rsi_status}<br>
     <b>Trend:</b> {trend}<br>
@@ -146,10 +148,10 @@ def analysis_page():
 
     # Chart
     fig, ax = plt.subplots(figsize=(10,5))
-    ax.plot(df["Date"], df["Close"], label="Close Price", color="blue")
-    ax.plot(df["Date"], df["MA5"], label="MA5", linestyle="--", color="green")
-    ax.plot(df["Date"], df["MA10"], label="MA10", linestyle="--", color="orange")
-    ax.scatter(df["Date"].iloc[-1], prediction, color="red", s=150, label="Predicted")
+    ax.plot(df["التاريخ"], df["الإغلاق"], label="Close Price", color="blue")
+    ax.plot(df["التاريخ"], df["MA5"], label="MA5", linestyle="--", color="green")
+    ax.plot(df["التاريخ"], df["MA10"], label="MA10", linestyle="--", color="orange")
+    ax.scatter(df["التاريخ"].iloc[-1], predicted, color="red", s=150, label="Predicted")
     ax.set_xlabel("Date")
     ax.set_ylabel("Price (OMR)")
     ax.grid(True)
@@ -171,16 +173,16 @@ def comparison_page():
     for stock in FILES.keys():
         df = load_stock(stock)
         X = df[["MA5","MA10","RSI"]]
-        y = df["Close"]
+        y = df["الإغلاق"]
         model = RandomForestRegressor(n_estimators=200, random_state=42)
         model.fit(X,y)
-        prediction = model.predict(X.tail(1))[0]
-        current = df.iloc[-1]["Close"]
-        expected_return = (prediction-current)/current*100
+        predicted = model.predict(X.tail(1))[0]
+        current = df.iloc[-1]["الإغلاق"]
+        expected_return = (predicted-current)/current*100
         rsi_val = df.iloc[-1]["RSI"]
         rsi_status = ("Overbought" if rsi_val>70 else "Oversold" if rsi_val<30 else "Normal")
-        trend = "Uptrend" if df["Close"].iloc[-1]>df["Close"].iloc[-5] else "Downtrend"
-        risk = "Stable" if df["Close"].pct_change().std()<0.02 else "High Volatility"
+        trend = "Uptrend" if df["الإغلاق"].iloc[-1]>df["الإغلاق"].iloc[-5] else "Downtrend"
+        risk = "Stable" if df["الإغلاق"].pct_change().std()<0.02 else "High Volatility"
         recommendation = "BUY" if expected_return>3 else "Avoid/Sell" if expected_return<-3 else "HOLD"
 
         report_data.append({
