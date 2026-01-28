@@ -56,7 +56,7 @@ if 'start_analysis' not in st.session_state:
 # ---- Welcome Page ----
 if not st.session_state['start_analysis']:
     st.markdown("<h1 style='text-align: center; color: #1A4D80; font-size:50px;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #1A4D80; font-size:28px;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #1A4D80; font-size:28px;'>An Intelligent Investment Recommendation System for the Oman Stock Market Using Artificial Intelligence and Reinforcement Learning/h3>", unsafe_allow_html=True)
     st.markdown("---")
 
     # ---- Big colored info boxes (ads) ----
@@ -235,3 +235,4 @@ if st.session_state['start_analysis']:
     # ---- Back to Home Button ----
     if st.button("🏠 Back to Home"):
         st.session_state['start_analysis'] = False
+
