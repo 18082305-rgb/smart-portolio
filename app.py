@@ -11,6 +11,43 @@ import matplotlib.pyplot as plt
 # ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
+# ---- Top Navigation Bar (Official, soft blue) ----
+st.markdown("""
+<style>
+.top-bar {
+    background-color: #D6E6F2;  /* أزرق فاتح رسمي */
+    padding: 6px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #A9CFE7;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+.top-bar a {
+    text-decoration: none;
+    color: #1A4D80;  /* أزرق أغمق للروابط */
+    font-weight: 500;
+    margin-left: 15px;
+}
+.top-bar a:hover {
+    color: #0D2B4F;  /* تغيير خفيف عند المرور */
+}
+.top-title {
+    font-weight: bold;
+    color: #1A4D80;
+}
+</style>
+
+<div class="top-bar">
+    <div class="top-title">📊 ARAS – Smart Portfolio</div>
+    <div>
+        <a href="https://www.msx.om" target="_blank">📰 Muscat Stock Exchange</a>
+        <a href="https://www.omanobserver.om/section/business" target="_blank">📈 Oman Market News</a>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 # ---- Initialize session_state ----
 if 'start_analysis' not in st.session_state:
     st.session_state['start_analysis'] = False
@@ -31,22 +68,18 @@ if not st.session_state['start_analysis']:
 
     for text, color in ads:
         st.markdown(f"""
-        <div style='background-color:{color}; padding:25px; border-radius:15px; margin-bottom:15px; color:#FFFFFF; text-align:center; font-size:24px; font-weight:bold;'>
-            {text}
-        </div>
+        <div style='background-color:{color}; padding:25px; border-radius:15px; margin-bottom:15px; color:#FFFFFF; text-align:center; font-size:24px; font-weight:bold;'>{text}</div>
         """, unsafe_allow_html=True)
 
     # ---- Start Analysis button ----
     if st.button("🚀 Start Analysis"):
         st.session_state['start_analysis'] = True
 
-    
-
 # ---- Main Analysis Page ----
 if st.session_state['start_analysis']:
     st.success("ARAS Loaded! Stock analysis starts below...")
 
-    # ---- Preloaded stock files (تأكدي من رفعهم في نفس مجلد التطبيق) ----
+    # ---- Preloaded stock files ----
     files_dict = {
         "Omantel.xlsx": "Omantel.xlsx",
         "Ooredoo.xlsx": "Ooredoo.xlsx"
@@ -173,10 +206,6 @@ if st.session_state['start_analysis']:
     ax2.set_title("Expected Profit/Loss per Stock")
     st.pyplot(fig2)
 
-  
-
-
     # ---- Back to Home Button ----
     if st.button("🏠 Back to Home"):
         st.session_state['start_analysis'] = False
-
