@@ -27,12 +27,12 @@ st.markdown("""
 }
 .top-bar a {
     text-decoration: none;
-    color: #1A4D80;  /* أزرق أغمق للروابط */
+    color: #1A4D80;  /* أزرق الشريط */
     font-weight: 500;
     margin-left: 15px;
 }
 .top-bar a:hover {
-    color: #0D2B4F;  /* تغيير خفيف عند المرور */
+    color: #0D2B4F;
 }
 .top-title {
     font-weight: bold;
@@ -55,11 +55,11 @@ if 'start_analysis' not in st.session_state:
 
 # ---- Welcome Page ----
 if not st.session_state['start_analysis']:
-    st.markdown("<h1 style='text-align: center; color: #8B307F; font-size:50px;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #6882BB; font-size:28px;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #1A4D80; font-size:50px;'>💼 Welcome to ARAS</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #1A4D80; font-size:28px;'>AI-powered Oman Stock Market Analysis</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # ---- Big colored info boxes (advertisements) ----
+    # ---- Big colored info boxes (ads) ----
     ads = [
         ("📈 Predict stock prices before the market moves!", "#8B307F"),
         ("🤖 Powered confidence scores for Omantel & Ooredoo!", "#00AA00"),
@@ -69,7 +69,7 @@ if not st.session_state['start_analysis']:
 
     for text, color in ads:
         st.markdown(f"""
-        <div style='background-color:{color}; padding:25px; border-radius:15px; margin-bottom:15px; color:#FFFFFF; text-align:center; font-size:24px; font-weight:bold;'>{text}</div>
+        <div style='background-color:{color}; padding:25px; border-radius:15px; margin-bottom:15px; color:#1A4D80; text-align:center; font-size:24px; font-weight:bold;'>{text}</div>
         """, unsafe_allow_html=True)
 
     # ---- Start Analysis button ----
@@ -114,7 +114,7 @@ if st.session_state['start_analysis']:
         X = X.iloc[:-horizon]
         y = y.iloc[:-horizon]
 
-        # ---- تأكد X و y ليسا فارغين ----
+        # ---- Check for empty X or y ----
         if len(X) < 1 or len(y) < 1:
             st.error("⚠️ Not enough data for prediction with the selected date range.")
             return np.nan, None, None, None
@@ -157,7 +157,7 @@ if st.session_state['start_analysis']:
     df = process_stock_file(files_dict[stock_choice])
 
     # ---- Date range picker ----
-    st.subheader("Select Prediction Period")
+    st.subheader("Select Prediction Period", anchor=None)
     min_date = df["Date"].min()
     max_date = df["Date"].max()
 
@@ -168,13 +168,12 @@ if st.session_state['start_analysis']:
         max_value=max_date
     )
 
-    # ---- حساب horizon_days ----
+    # ---- horizon_days ----
     horizon_days = (end_date - start_date).days
     if horizon_days < 1:
         st.warning("⚠️ End date must be after start date. Using 1 day as default.")
         horizon_days = 1
 
-    # ---- تأكد horizon_days أصغر من طول البيانات ----
     if horizon_days >= len(df):
         st.warning(f"⚠️ The selected period is too long for available data ({len(df)} days). Using maximum available horizon.")
         horizon_days = len(df) - 1
@@ -182,7 +181,7 @@ if st.session_state['start_analysis']:
     # ---- Main Prediction ----
     predicted_price, model, X, y = predict_price(df, horizon_days)
     if model is None:
-        st.stop()  # يوقف التطبيق إذا البيانات غير كافية
+        st.stop()
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
     confidence = confidence_score(model, X_test, y_test)
@@ -198,9 +197,9 @@ if st.session_state['start_analysis']:
         recommendation, rec_color = "Hold ⚪", "#FFA500"
 
     # ---- Display report ----
-    st.subheader(f"Stock Report: {stock_choice}")
+    st.subheader(f"Stock Report: {stock_choice}", anchor=None)
     st.markdown(f"""
-    <div style='background-color:#8B307F; padding:20px; border-radius:15px; color:#FFFFFF; margin-bottom:15px; font-size:20px;'>
+    <div style='background-color:#8B307F; padding:20px; border-radius:15px; color:#1A4D80; margin-bottom:15px; font-size:20px;'>
     - **Current Price:** {current_price:.3f} OMR  
     - **Predicted Price ({horizon_days} days):** {predicted_price:.3f} OMR  
     - **Profit Expectation:** {profit_pct:.2f}%  
@@ -225,7 +224,7 @@ if st.session_state['start_analysis']:
     df_ooredoo = process_stock_file(files_dict["Ooredoo.xlsx"])
     stock1, stock2 = compare_stocks("Omantel", df_omantel, "Ooredoo", df_ooredoo, horizon_days)
 
-    st.subheader("Stock Comparison: Omantel vs Ooredoo")
+    st.subheader("Stock Comparison: Omantel vs Ooredoo", anchor=None)
     st.write(pd.DataFrame([stock1, stock2]))
 
     # ---- Bar chart ----
