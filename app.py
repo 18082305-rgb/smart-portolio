@@ -61,15 +61,15 @@ if not st.session_state['start_analysis']:
 
     # ---- Big colored info boxes (ads) ----
     ads = [
-        ("📈 Predict stock prices before the market moves!", "#8B307F"),
-        ("🤖 Powered confidence scores for Omantel & Ooredoo!", "#00AA00"),
-        ("📊 Compare top stocks in seconds!", "#FF6600"),
-        ("💡 Make smarter investment decisions today!", "#8B307F")
+        ("📈 Predict stock prices before the market moves!", "#D6E6F2"),
+        ("🤖 Powered confidence scores for Omantel & Ooredoo!", "#D6E6F2"),
+        ("📊 Compare top stocks in seconds!", "#D6E6F2"),
+        ("💡 Make smarter investment decisions today!", "#D6E6F2")
     ]
 
     for text, color in ads:
         st.markdown(f"""
-        <div style='background-color:{color}; padding:25px; border-radius:15px; margin-bottom:15px; color:#1A4D80; text-align:center; font-size:24px; font-weight:bold;'>{text}</div>
+        <div style='background-color:{color}; padding:25px; border-radius:15px; margin-bottom:15px; color:#000000; text-align:center; font-size:24px; font-weight:bold;'>{text}</div>
         """, unsafe_allow_html=True)
 
     # ---- Start Analysis button ----
@@ -157,7 +157,7 @@ if st.session_state['start_analysis']:
     df = process_stock_file(files_dict[stock_choice])
 
     # ---- Date range picker ----
-    st.subheader("Select Prediction Period", anchor=None)
+    st.subheader("Select Prediction Period")
     min_date = df["Date"].min()
     max_date = df["Date"].max()
 
@@ -196,17 +196,13 @@ if st.session_state['start_analysis']:
     else:
         recommendation, rec_color = "Hold ⚪", "#FFA500"
 
-    # ---- Display report ----
-    st.subheader(f"Stock Report: {stock_choice}", anchor=None)
-    st.markdown(f"""
-    <div style='background-color:#8B307F; padding:20px; border-radius:15px; color:#1A4D80; margin-bottom:15px; font-size:20px;'>
-    - **Current Price:** {current_price:.3f} OMR  
-    - **Predicted Price ({horizon_days} days):** {predicted_price:.3f} OMR  
-    - **Profit Expectation:** {profit_pct:.2f}%  
-    - **Confidence Score:** {confidence:.1f}%  
-    - **Recommendation:** <span style="color:{rec_color}">{recommendation}</span>
-    </div>
-    """, unsafe_allow_html=True)
+    # ---- Display report as normal text (no box) ----
+    st.subheader(f"Stock Report: {stock_choice}")
+    st.write(f"**Current Price:** {current_price:.3f} OMR")
+    st.write(f"**Predicted Price ({horizon_days} days):** {predicted_price:.3f} OMR")
+    st.write(f"**Profit Expectation:** {profit_pct:.2f}%")
+    st.write(f"**Confidence Score:** {confidence:.1f}%")
+    st.markdown(f"**Recommendation:** <span style='color:{rec_color}'>{recommendation}</span>", unsafe_allow_html=True)
 
     # ---- Actual vs Predicted Chart ----
     fig, ax = plt.subplots(figsize=(10,4))
@@ -224,7 +220,7 @@ if st.session_state['start_analysis']:
     df_ooredoo = process_stock_file(files_dict["Ooredoo.xlsx"])
     stock1, stock2 = compare_stocks("Omantel", df_omantel, "Ooredoo", df_ooredoo, horizon_days)
 
-    st.subheader("Stock Comparison: Omantel vs Ooredoo", anchor=None)
+    st.subheader("Stock Comparison: Omantel vs Ooredoo")
     st.write(pd.DataFrame([stock1, stock2]))
 
     # ---- Bar chart ----
