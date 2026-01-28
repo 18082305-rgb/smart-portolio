@@ -40,12 +40,7 @@ if not st.session_state['start_analysis']:
     if st.button("🚀 Start Analysis"):
         st.session_state['start_analysis'] = True
 
-    # ---- GIF at the bottom, centered ----
-    st.markdown("""
-    <div style="text-align:center; margin-top:30px;">
-        <img src="https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif" width="400">
-    </div>
-    """, unsafe_allow_html=True)
+    
 
 # ---- Main Analysis Page ----
 if st.session_state['start_analysis']:
@@ -184,3 +179,4 @@ if st.session_state['start_analysis']:
     # ---- Back to Home Button ----
     if st.button("🏠 Back to Home"):
         st.session_state['start_analysis'] = False
+
