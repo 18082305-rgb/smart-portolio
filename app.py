@@ -12,28 +12,6 @@ from datetime import datetime, timedelta
 # ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
-# ---- Enhanced Transparent Stock Market Background ----
-st.markdown("""
-<style>
-[data-testid="stAppViewContainer"] {
-    background-image: url("https://cdn.pixabay.com/photo/2022/02/02/12/36/finance-chart-market-graph-6982336_1280.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    filter: brightness(0.35) contrast(1.1);  /* تخفيف الإضاءة وجعلها شبه شفافة */
-}
-
-[data-testid="stHeader"] {
-    background: rgba(255, 255, 255, 0.85);
-}
-
-[data-testid="stSidebar"] {
-    background: rgba(255, 255, 255, 0.9);
-}
-</style>
-""", unsafe_allow_html=True)
-
 # ---- Top Navigation Bar (Official, soft blue) ----
 st.markdown("""
 <style>
@@ -136,6 +114,7 @@ if st.session_state['start_analysis']:
         X = X.iloc[:-horizon]
         y = y.iloc[:-horizon]
 
+        # ---- Check for empty X or y ----
         if len(X) < 1 or len(y) < 1:
             st.error("⚠️ Not enough data for prediction with the selected date range.")
             return np.nan, None, None, None
@@ -189,6 +168,7 @@ if st.session_state['start_analysis']:
         max_value=max_date
     )
 
+    # ---- horizon_days ----
     horizon_days = (end_date - start_date).days
     if horizon_days < 1:
         st.warning("⚠️ End date must be after start date. Using 1 day as default.")
@@ -216,6 +196,7 @@ if st.session_state['start_analysis']:
     else:
         recommendation, rec_color = "Hold ⚪", "#FFA500"
 
+    # ---- Display report as normal text (no box) ----
     st.subheader(f"Stock Report: {stock_choice}")
     st.write(f"**Current Price:** {current_price:.3f} OMR")
     st.write(f"**Predicted Price ({horizon_days} days):** {predicted_price:.3f} OMR")
@@ -254,3 +235,5 @@ if st.session_state['start_analysis']:
     # ---- Back to Home Button ----
     if st.button("🏠 Back to Home"):
         st.session_state['start_analysis'] = False
+
+
