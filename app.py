@@ -12,11 +12,11 @@ from datetime import datetime, timedelta
 # ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
-# ---- Background GIF (Animated Stock Market) ----
+# ---- Background Image from Pixabay ----
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
-    background-image: url("https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif");
+    background-image: url("https://cdn.pixabay.com/photo/2022/02/02/12/36/finance-chart-market-graph-6982336_1280.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -24,14 +24,15 @@ st.markdown("""
 }
 
 [data-testid="stHeader"] {
-    background: rgba(255, 255, 255, 0.8);  /* شفافية للheader */
+    background: rgba(255, 255, 255, 0.8);
 }
 
 [data-testid="stSidebar"] {
-    background: rgba(255, 255, 255, 0.9);  /* شفافية للsidebar */
+    background: rgba(255, 255, 255, 0.9);
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # ---- Top Navigation Bar (Official, soft blue) ----
 st.markdown("""
@@ -253,3 +254,4 @@ if st.session_state['start_analysis']:
     # ---- Back to Home Button ----
     if st.button("🏠 Back to Home"):
         st.session_state['start_analysis'] = False
+
