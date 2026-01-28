@@ -12,6 +12,27 @@ from datetime import datetime, timedelta
 # ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
+# ---- Background image CSS ----
+st.markdown("""
+<style>
+[data-testid="stAppViewContainer"] {
+    background-image: url("https://images.unsplash.com/photo-1601933479982-86f7d74c87a0?auto=format&fit=crop&w=1470&q=80");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+[data-testid="stHeader"] {
+    background: rgba(255, 255, 255, 0.8);  /* شفافية للheader */
+}
+
+[data-testid="stSidebar"] {
+    background: rgba(255, 255, 255, 0.9);  /* شفافية للsidebar */
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ---- Top Navigation Bar (Official, soft blue) ----
 st.markdown("""
 <style>
@@ -114,7 +135,6 @@ if st.session_state['start_analysis']:
         X = X.iloc[:-horizon]
         y = y.iloc[:-horizon]
 
-        # ---- Check for empty X or y ----
         if len(X) < 1 or len(y) < 1:
             st.error("⚠️ Not enough data for prediction with the selected date range.")
             return np.nan, None, None, None
@@ -168,7 +188,6 @@ if st.session_state['start_analysis']:
         max_value=max_date
     )
 
-    # ---- horizon_days ----
     horizon_days = (end_date - start_date).days
     if horizon_days < 1:
         st.warning("⚠️ End date must be after start date. Using 1 day as default.")
@@ -196,7 +215,6 @@ if st.session_state['start_analysis']:
     else:
         recommendation, rec_color = "Hold ⚪", "#FFA500"
 
-    # ---- Display report as normal text (no box) ----
     st.subheader(f"Stock Report: {stock_choice}")
     st.write(f"**Current Price:** {current_price:.3f} OMR")
     st.write(f"**Predicted Price ({horizon_days} days):** {predicted_price:.3f} OMR")
@@ -235,6 +253,3 @@ if st.session_state['start_analysis']:
     # ---- Back to Home Button ----
     if st.button("🏠 Back to Home"):
         st.session_state['start_analysis'] = False
-
-
-
