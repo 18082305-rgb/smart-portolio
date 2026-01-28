@@ -12,28 +12,15 @@ from datetime import datetime, timedelta
 # ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
-# ---- Dynamic Stock Chart Background ----
+# ---- Background GIF (Animated Stock Market) ----
 st.markdown("""
 <style>
-#dynamic-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;  /* خلف كل العناصر */
-    background: #0a0a0a;
-    overflow: hidden;
-}
-.line {
-    position: absolute;
-    width: 2px;
-    background: rgba(0, 255, 0, 0.6);
-    animation: moveLine linear infinite;
-}
-@keyframes moveLine {
-    0% { top: 100%; }
-    100% { top: -10%; }
+[data-testid="stAppViewContainer"] {
+    background-image: url("https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 [data-testid="stHeader"] {
@@ -44,20 +31,6 @@ st.markdown("""
     background: rgba(255, 255, 255, 0.9);  /* شفافية للsidebar */
 }
 </style>
-
-<div id="dynamic-background"></div>
-
-<script>
-const container = document.getElementById("dynamic-background");
-for (let i = 0; i < 50; i++) {
-    const line = document.createElement("div");
-    line.className = "line";
-    line.style.left = Math.random() * 100 + "%";
-    line.style.height = Math.random() * 100 + 50 + "px";
-    line.style.animationDuration = (Math.random() * 10 + 5) + "s";
-    container.appendChild(line);
-}
-</script>
 """, unsafe_allow_html=True)
 
 # ---- Top Navigation Bar (Official, soft blue) ----
