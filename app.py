@@ -113,6 +113,12 @@ if st.session_state['start_analysis']:
         y = df["Close"].shift(-horizon)
         X = X.iloc[:-horizon]
         y = y.iloc[:-horizon]
+
+        # ---- تأكد X و y ليسا فارغين ----
+        if len(X) < 1 or len(y) < 1:
+            st.error("⚠️ Not enough data for prediction with the selected date range.")
+            return np.nan, None, None, None
+
         model = RandomForestRegressor(n_estimators=300, random_state=42)
         model.fit(X, y)
         predicted = model.predict(X.iloc[-1].values.reshape(1,-1))[0]
@@ -129,6 +135,9 @@ if st.session_state['start_analysis']:
     def compare_stocks(name1, df1, name2, df2, horizon):
         def analyze(df, name):
             pred, model, X, y = predict_price(df, horizon)
+            if model is None:
+                return {"Name": name, "Last Close": np.nan, "Predicted": np.nan, "Profit %": np.nan,
+                        "Trend": "N/A", "Confidence": np.nan}
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
             conf = confidence_score(model, X_test, y_test)
             last = df.iloc[-1]
@@ -165,8 +174,16 @@ if st.session_state['start_analysis']:
         st.warning("⚠️ End date must be after start date. Using 1 day as default.")
         horizon_days = 1
 
+    # ---- تأكد horizon_days أصغر من طول البيانات ----
+    if horizon_days >= len(df):
+        st.warning(f"⚠️ The selected period is too long for available data ({len(df)} days). Using maximum available horizon.")
+        horizon_days = len(df) - 1
+
     # ---- Main Prediction ----
     predicted_price, model, X, y = predict_price(df, horizon_days)
+    if model is None:
+        st.stop()  # يوقف التطبيق إذا البيانات غير كافية
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
     confidence = confidence_score(model, X_test, y_test)
     current_price = df.iloc[-1]["Close"]
