@@ -13,10 +13,10 @@ st.set_page_config(
 )
 
 # -----------------------------
-# Session State Init
+# Session State
 # -----------------------------
 if "page" not in st.session_state:
-    st.session_state.page = "dashboard"  # يبدأ مباشرة في Dashboard
+    st.session_state.page = "dashboard"
 
 # -----------------------------
 # Files Preloaded
@@ -27,10 +27,10 @@ FILES = {
 }
 
 # -----------------------------
-# Navbar Helper
+# Navbar
 # -----------------------------
 def top_bar():
-    col1, col2, col3 = st.columns([3, 3, 1])
+    col1, col2, col3 = st.columns([3,3,1])
     with col1:
         st.markdown("### 📈 Muscat Market Today")
         st.caption("Market Status: Stable | Update: Live")
@@ -39,7 +39,7 @@ def top_bar():
         st.caption("Last Price: 4,520 | Change: +0.6%")
     with col3:
         if st.button("🚪 Exit App"):
-            st.stop()  # يغلق التطبيق مباشرة
+            st.stop()
 
 # -----------------------------
 # Load Stock Data
@@ -63,9 +63,9 @@ def load_stock(stock_name):
     df.reset_index(drop=True, inplace=True)
     return df
 
-# ==========================
+# -----------------------------
 # Dashboard Page
-# ==========================
+# -----------------------------
 def dashboard_page():
     top_bar()
     st.markdown("---")
@@ -85,9 +85,9 @@ def dashboard_page():
         if st.button("📊 Stock Comparison"):
             st.session_state.page = "comparison"
 
-# ==========================
+# -----------------------------
 # Stock Analysis Page
-# ==========================
+# -----------------------------
 def analysis_page():
     top_bar()
     st.markdown("---")
@@ -98,10 +98,7 @@ def analysis_page():
     min_date = df_full["Date"].min()
     max_date = df_full["Date"].max()
 
-    # ==========================
-    # اختيار فترة التحليل
-    # ==========================
-    st.markdown("### 📅 Select Analysis Period")
+    # اختيار الفترة
     col1, col2 = st.columns(2)
     with col1:
         start_date = st.date_input("From", min_value=min_date.date(), max_value=max_date.date(), value=min_date.date())
@@ -113,33 +110,30 @@ def analysis_page():
         return
 
     df = df_full[(df_full["Date"].dt.date >= start_date) & (df_full["Date"].dt.date <= end_date)].copy()
-    if len(df) < 10:
-        st.warning("Not enough data for selected period")
+    if len(df)<10:
+        st.warning("Not enough data for this period")
         return
 
-    # ==========================
-    # نموذج التنبؤ
-    # ==========================
+    # Features & Model
     X = df[["MA5","MA10","RSI"]]
     y = df["Close"]
     model = RandomForestRegressor(n_estimators=200, random_state=42)
-    model.fit(X, y)
+    model.fit(X,y)
 
     prediction = model.predict(X.tail(1))[0]
     current = df.iloc[-1]["Close"]
     expected_return = (prediction-current)/current*100
 
+    # Indicators
     rsi_val = df.iloc[-1]["RSI"]
-    rsi_status = ("Overbought - Negative Momentum" if rsi_val>70 else
-                  "Oversold - Positive Momentum" if rsi_val<30 else
-                  "Normal - Negative Momentum" if expected_return<0 else
-                  "Normal - Positive Momentum")
+    rsi_status = ("Overbought" if rsi_val>70 else "Oversold" if rsi_val<30 else "Normal")
     trend = "Uptrend" if df["Close"].iloc[-1] > df["Close"].iloc[-5] else "Downtrend"
-    risk = "Relatively Stable" if df["Close"].pct_change().std()<0.02 else "High Volatility"
+    risk = "Stable" if df["Close"].pct_change().std()<0.02 else "High Volatility"
     recommendation = "BUY" if expected_return>3 else "Avoid/Sell" if expected_return<-3 else "HOLD"
 
+    # Display Info
     st.markdown(f"""
-    <div style='background:#F9FAFB;padding:25px;border-radius:15px;border:1px solid #E5E7EB;'>
+    <div style='background:#F9FAFB;padding:20px;border-radius:12px;border:1px solid #E5E7EB'>
     <b>Current Price:</b> {current:.3f} OMR<br>
     <b>Predicted Price:</b> {prediction:.3f} OMR<br>
     <b>Expected Return:</b> {expected_return:.2f}%<br>
@@ -150,13 +144,11 @@ def analysis_page():
     </div>
     """, unsafe_allow_html=True)
 
-    # ==========================
-    # الرسم البياني
-    # ==========================
+    # Chart
     fig, ax = plt.subplots(figsize=(10,5))
-    ax.plot(df["Date"], df["Close"], label="Close Price")
-    ax.plot(df["Date"], df["MA5"], label="MA5", linestyle="--")
-    ax.plot(df["Date"], df["MA10"], label="MA10", linestyle="--")
+    ax.plot(df["Date"], df["Close"], label="Close Price", color="blue")
+    ax.plot(df["Date"], df["MA5"], label="MA5", linestyle="--", color="green")
+    ax.plot(df["Date"], df["MA10"], label="MA10", linestyle="--", color="orange")
     ax.scatter(df["Date"].iloc[-1], prediction, color="red", s=150, label="Predicted")
     ax.set_xlabel("Date")
     ax.set_ylabel("Price (OMR)")
@@ -167,9 +159,9 @@ def analysis_page():
     if st.button("⬅ Back to Dashboard"):
         st.session_state.page = "dashboard"
 
-# ==========================
+# -----------------------------
 # Stock Comparison Page
-# ==========================
+# -----------------------------
 def comparison_page():
     top_bar()
     st.markdown("---")
@@ -177,18 +169,16 @@ def comparison_page():
 
     report_data=[]
     for stock in FILES.keys():
-        df=load_stock(stock)
-        X=df[["MA5","MA10","RSI"]]
-        y=df["Close"]
+        df = load_stock(stock)
+        X = df[["MA5","MA10","RSI"]]
+        y = df["Close"]
         model = RandomForestRegressor(n_estimators=200, random_state=42)
         model.fit(X,y)
         prediction = model.predict(X.tail(1))[0]
         current = df.iloc[-1]["Close"]
         expected_return = (prediction-current)/current*100
         rsi_val = df.iloc[-1]["RSI"]
-        rsi_status = ("Overbought" if rsi_val>70 else
-                      "Oversold" if rsi_val<30 else
-                      "Normal")
+        rsi_status = ("Overbought" if rsi_val>70 else "Oversold" if rsi_val<30 else "Normal")
         trend = "Uptrend" if df["Close"].iloc[-1]>df["Close"].iloc[-5] else "Downtrend"
         risk = "Stable" if df["Close"].pct_change().std()<0.02 else "High Volatility"
         recommendation = "BUY" if expected_return>3 else "Avoid/Sell" if expected_return<-3 else "HOLD"
@@ -203,17 +193,18 @@ def comparison_page():
             "Recommendation": recommendation
         })
 
-    report_df = pd.DataFrame(report_data)
-    st.dataframe(report_df, use_container_width=True)
-    best_stock = report_df.sort_values("Period Performance %", ascending=False).iloc[0]
+    df_report = pd.DataFrame(report_data)
+    st.dataframe(df_report, use_container_width=True)
+
+    best_stock = df_report.sort_values("Period Performance %", ascending=False).iloc[0]
     st.markdown(f"### ⭐ Best Stock Recommendation: **{best_stock['Stock']}** ({best_stock['Recommendation']})")
 
     if st.button("⬅ Back to Dashboard"):
         st.session_state.page = "dashboard"
 
-# ==========================
+# -----------------------------
 # Routing
-# ==========================
+# -----------------------------
 if st.session_state.page=="dashboard":
     dashboard_page()
 elif st.session_state.page=="analysis":
