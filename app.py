@@ -6,13 +6,17 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
+from PIL import Image
 
 # ------------------------------
 # Page config
 # ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
-# ---- Top Navigation Bar (Official, soft blue) ----
+# ---- Load Logo ----
+logo = Image.open("/mnt/data/bac3af4d-0967-42f7-bb2b-7ed7a88e0482.png")
+
+# ---- Top Navigation Bar (Official, soft blue) with Logo ----
 st.markdown("""
 <style>
 .top-bar {
@@ -34,20 +38,28 @@ st.markdown("""
 .top-bar a:hover {
     color: #0D2B4F;
 }
-.top-title {
-    font-weight: bold;
+.logo-text {
+    display: flex;
+    align-items: center;
+}
+.logo-text h1 {
+    margin-left: 10px;
     color: #1A4D80;
+    font-size: 24px;
 }
 </style>
 
 <div class="top-bar">
-    <div class="top-title">📊 ARAS – Smart Portfolio</div>
+    <div class="logo-text">
+        <img src="data:image/png;base64,{logo_b64}" width="40">
+        <h1>ARAS</h1>
+    </div>
     <div>
         <a href="https://www.msx.om" target="_blank">📰 Muscat Stock Exchange</a>
         <a href="https://www.omanobserver.om/section/business" target="_blank">📈 Oman Market News</a>
     </div>
 </div>
-""", unsafe_allow_html=True)
+""".format(logo_b64=st.image(logo)._repr_png_().decode("latin1")), unsafe_allow_html=True)
 
 # ---- Initialize session_state ----
 if 'start_analysis' not in st.session_state:
@@ -113,12 +125,9 @@ if st.session_state['start_analysis']:
         y = df["Close"].shift(-horizon)
         X = X.iloc[:-horizon]
         y = y.iloc[:-horizon]
-
-        # ---- Check for empty X or y ----
         if len(X) < 1 or len(y) < 1:
             st.error("⚠️ Not enough data for prediction with the selected date range.")
             return np.nan, None, None, None
-
         model = RandomForestRegressor(n_estimators=300, random_state=42)
         model.fit(X, y)
         predicted = model.predict(X.iloc[-1].values.reshape(1,-1))[0]
@@ -168,12 +177,10 @@ if st.session_state['start_analysis']:
         max_value=max_date
     )
 
-    # ---- horizon_days ----
     horizon_days = (end_date - start_date).days
     if horizon_days < 1:
         st.warning("⚠️ End date must be after start date. Using 1 day as default.")
         horizon_days = 1
-
     if horizon_days >= len(df):
         st.warning(f"⚠️ The selected period is too long for available data ({len(df)} days). Using maximum available horizon.")
         horizon_days = len(df) - 1
