@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 # ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
-# ---- Background Image from Pixabay ----
+# ---- Enhanced Transparent Stock Market Background ----
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
@@ -21,10 +21,11 @@ st.markdown("""
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
+    filter: brightness(0.35) contrast(1.1);  /* تخفيف الإضاءة وجعلها شبه شفافة */
 }
 
 [data-testid="stHeader"] {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.85);
 }
 
 [data-testid="stSidebar"] {
@@ -32,7 +33,6 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ---- Top Navigation Bar (Official, soft blue) ----
 st.markdown("""
@@ -254,4 +254,3 @@ if st.session_state['start_analysis']:
     # ---- Back to Home Button ----
     if st.button("🏠 Back to Home"):
         st.session_state['start_analysis'] = False
-
