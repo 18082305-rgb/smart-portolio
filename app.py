@@ -12,40 +12,93 @@ from datetime import datetime, timedelta
 # ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
-# ---- Top Navigation Bar (Official, soft blue) ----
+# ---- Top Navigation Bar + Moving Ticker (Official, soft blue) ----
 st.markdown("""
 <style>
+/* Top bar */
 .top-bar {
-    background-color: #D6E6F2;  /* أزرق فاتح رسمي */
-    padding: 6px 25px;
+    background-color: #D6E6F2;
+    padding: 10px 25px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #A9CFE7;
     font-family: Arial, sans-serif;
+}
+
+/* Left title */
+.top-title {
+    font-weight: 800;
+    color: #1A4D80;
+    font-size: 15px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+/* Links */
+.top-links a {
+    text-decoration: none;
+    color: #1A4D80;
+    font-weight: 600;
+    margin-left: 18px;
+    font-size: 13px;
+}
+.top-links a:hover { color: #0D2B4F; }
+
+/* Ticker wrapper */
+.ticker-wrap {
+    background: #EAF3FA;
+    border-bottom: 1px solid #A9CFE7;
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: Arial, sans-serif;
+}
+
+/* Ticker */
+.ticker {
+    display: inline-block;
+    padding-left: 100%;
+    animation: tickerMove 25s linear infinite;
+}
+.ticker span{
+    display:inline-block;
+    padding: 8px 0;
+    font-weight: 700;
+    color: #0D2B4F;
     font-size: 14px;
 }
-.top-bar a {
-    text-decoration: none;
-    color: #1A4D80;  /* أزرق الشريط */
-    font-weight: 500;
-    margin-left: 15px;
+
+/* Animation */
+@keyframes tickerMove {
+    0%   { transform: translateX(0%); }
+    100% { transform: translateX(-100%); }
 }
-.top-bar a:hover {
-    color: #0D2B4F;
-}
-.top-title {
-    font-weight: bold;
-    color: #1A4D80;
+
+/* Smooth look on small screens */
+@media (max-width: 700px){
+  .top-links a{ display:none; }
+  .top-title{ font-size:14px; }
+  .ticker span{ font-size:13px; }
 }
 </style>
 
 <div class="top-bar">
     <div class="top-title">📊 ARAS – Smart Portfolio</div>
-    <div>
+    <div class="top-links">
         <a href="https://www.msx.om" target="_blank">📰 Muscat Stock Exchange</a>
         <a href="https://www.omanobserver.om/section/business" target="_blank">📈 Oman Market News</a>
     </div>
+</div>
+
+<div class="ticker-wrap">
+  <div class="ticker">
+    <span>
+      🔔 ARAS Ticker: Track Omantel & Ooredoo faster • AI Confidence • Smart Comparison • Save time • Make clearer decisions •
+      🔔 ARAS Ticker: Track Omantel & Ooredoo faster • AI Confidence • Smart Comparison • Save time • Make clearer decisions •
+      🔔 ARAS Ticker: Track Omantel & Ooredoo faster • AI Confidence • Smart Comparison • Save time • Make clearer decisions •
+    </span>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -138,6 +191,20 @@ if st.session_state['start_analysis']:
             if model is None:
                 return {"Name": name, "Last Close": np.nan, "Predicted": np.nan, "Profit %": np.nan,
                         "Trend": "N/A", "Confidence": np.nan}
+
+            # ✅ حماية من قلة البيانات حتى لا ينهار التطبيق
+            if len(X) < 20:
+                last = df.iloc[-1]
+                profit_pct = (pred - last["Close"]) / last["Close"] * 100
+                return {
+                    "Name": name,
+                    "Last Close": last["Close"],
+                    "Predicted": pred,
+                    "Profit %": profit_pct,
+                    "Trend": "N/A (Low data)",
+                    "Confidence": np.nan
+                }
+
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
             conf = confidence_score(model, X_test, y_test)
             last = df.iloc[-1]
@@ -183,8 +250,14 @@ if st.session_state['start_analysis']:
     if model is None:
         st.stop()
 
+    # ✅ إصلاح ValueError: إذا صار X صغير جداً نوقف التحليل برسالة واضحة
+    if len(X) < 20:
+        st.warning("⚠️ الفترة المختارة كبيرة جدًا مقارنة بالبيانات، فصار عدد نقاط التدريب قليل. قلّل المدة (مثلاً شهر/3 أشهر) للحصول على توقع وثقة.")
+        st.stop()
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
     confidence = confidence_score(model, X_test, y_test)
+
     current_price = df.iloc[-1]["Close"]
     profit_pct = (predicted_price - current_price)/current_price*100
     future_date = df.iloc[-1]["Date"] + pd.Timedelta(days=horizon_days)
