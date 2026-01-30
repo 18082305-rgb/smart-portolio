@@ -50,24 +50,50 @@ html, body, [class*="css"]{
   display:flex;
   align-items:center;
   gap: 12px;
+  min-width: 0; /* مهم للموبايل حتى ما ينقص */
 }
 .aras-logo{
   width:44px;height:44px;border-radius:14px;
   background: linear-gradient(135deg, var(--brand), var(--brand2));
   display:flex;align-items:center;justify-content:center;
   color:white;font-weight:900;letter-spacing:2px;
+  flex: 0 0 auto;
 }
 .aras-title{
   font-weight:900;color:var(--brand);font-size:15px;
+  white-space: normal;
+  line-height: 1.2;
 }
 .aras-sub{
   font-weight:700;color:var(--muted);font-size:12px;margin-top:1px;
+  white-space: normal;
+  line-height: 1.2;
+}
+.aras-links{
+  display:flex;
+  flex-wrap: wrap;  /* مهم */
+  gap: 10px;
+  justify-content: flex-end;
 }
 .aras-links a{
   text-decoration:none;color:var(--brand2);
-  font-weight:800;margin-left:14px;font-size:13px;
+  font-weight:800;font-size:13px;
+  margin-left: 0;
 }
 .aras-links a:hover{ color:#0D2B4F; }
+
+/* ✅ إصلاح Top Bar للموبايل */
+@media (max-width: 768px){
+  .aras-topbar{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 12px;
+  }
+  .aras-title{ font-size: 14px; }
+  .aras-sub{ font-size: 11px; }
+  .aras-links{ justify-content: flex-start; }
+}
 
 /* Moving ticker */
 .ticker-wrap{
@@ -127,7 +153,7 @@ html, body, [class*="css"]{
   font-size: 13px;
 }
 
-/* Cards */
+/* Cards (كما هي لبقية الكروت) */
 .card{
   background: var(--card);
   border: 1px solid var(--border);
@@ -154,6 +180,12 @@ html, body, [class*="css"]{
   font-weight: 800;
   font-size: 12px;
   margin-top: 6px;
+}
+
+/* ✅ تصغير بوكس Selections فقط */
+.selections-card{
+  padding: 10px 12px !important;
+  min-height: unset !important;
 }
 
 /* Badges */
@@ -377,7 +409,8 @@ if st.session_state.start:
     left, right = st.columns([1.05, 1.95])
 
     with left:
-        st.markdown("<div class='card'><div class='label'>Selections</div>", unsafe_allow_html=True)
+        # ✅ هنا فقط أضفنا selections-card
+        st.markdown("<div class='card selections-card'><div class='label'>Selections</div>", unsafe_allow_html=True)
 
         company = st.selectbox("Select Company", list(FILES.keys()))
 
@@ -544,5 +577,3 @@ if st.session_state.start:
         st.session_state.start = False
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-
-
