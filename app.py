@@ -12,92 +12,87 @@ from datetime import datetime, timedelta
 # ------------------------------
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
-# ---- Top Navigation Bar + Moving Ticker (Official, soft blue) ----
+# ---- Top Navigation Bar + Moving Marquee (Official, soft blue) ----
 st.markdown("""
 <style>
-/* Top bar */
 .top-bar {
-    background-color: #D6E6F2;
+    background-color: #D6E6F2;  /* أزرق فاتح رسمي */
     padding: 10px 25px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 8px;
     border-bottom: 1px solid #A9CFE7;
     font-family: Arial, sans-serif;
-}
-
-/* Left title */
-.top-title {
-    font-weight: 800;
-    color: #1A4D80;
-    font-size: 15px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
-
-/* Links */
-.top-links a {
-    text-decoration: none;
-    color: #1A4D80;
-    font-weight: 600;
-    margin-left: 18px;
-    font-size: 13px;
-}
-.top-links a:hover { color: #0D2B4F; }
-
-/* Ticker wrapper */
-.ticker-wrap {
-    background: #EAF3FA;
-    border-bottom: 1px solid #A9CFE7;
-    overflow: hidden;
-    white-space: nowrap;
-    font-family: Arial, sans-serif;
-}
-
-/* Ticker */
-.ticker {
-    display: inline-block;
-    padding-left: 100%;
-    animation: tickerMove 25s linear infinite;
-}
-.ticker span{
-    display:inline-block;
-    padding: 8px 0;
-    font-weight: 700;
-    color: #0D2B4F;
     font-size: 14px;
 }
 
-/* Animation */
-@keyframes tickerMove {
-    0%   { transform: translateX(0%); }
-    100% { transform: translateX(-100%); }
+.top-bar-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* Smooth look on small screens */
-@media (max-width: 700px){
-  .top-links a{ display:none; }
-  .top-title{ font-size:14px; }
-  .ticker span{ font-size:13px; }
+.top-bar a {
+    text-decoration: none;
+    color: #1A4D80;  /* أزرق الشريط */
+    font-weight: 600;
+    margin-left: 15px;
+}
+.top-bar a:hover {
+    color: #0D2B4F;
+}
+.top-title {
+    font-weight: 800;
+    color: #123B66;
+    font-size: 15px;
+}
+
+/* ---- Moving ticker (marquee) ---- */
+.ticker-wrap {
+    width: 100%;
+    overflow: hidden;
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(26,77,128,0.25);
+    border-radius: 10px;
+    padding: 6px 0;
+}
+
+.ticker {
+    display: inline-block;
+    white-space: nowrap;
+    animation: tickerMove 18s linear infinite;
+    font-weight: 700;
+    color: #1A4D80;
+    font-size: 14px;
+    padding-left: 100%;
+}
+
+@keyframes tickerMove {
+    0%   { transform: translateX(0%); }
+    100% { transform: translateX(-200%); }
+}
+
+.ticker span {
+    margin-right: 45px;
 }
 </style>
 
 <div class="top-bar">
-    <div class="top-title">📊 ARAS – Smart Portfolio</div>
-    <div class="top-links">
-        <a href="https://www.msx.om" target="_blank">📰 Muscat Stock Exchange</a>
-        <a href="https://www.omanobserver.om/section/business" target="_blank">📈 Oman Market News</a>
-    </div>
-</div>
+  <div class="top-bar-row">
+      <div class="top-title">📊 ARAS – Smart Portfolio</div>
+      <div>
+          <a href="https://www.msx.om" target="_blank">📰 Muscat Stock Exchange</a>
+          <a href="https://www.omanobserver.om/section/business" target="_blank">📈 Oman Market News</a>
+      </div>
+  </div>
 
-<div class="ticker-wrap">
-  <div class="ticker">
-    <span>
-      🔔 ARAS Ticker: Track Omantel & Ooredoo faster • AI Confidence • Smart Comparison • Save time • Make clearer decisions •
-      🔔 ARAS Ticker: Track Omantel & Ooredoo faster • AI Confidence • Smart Comparison • Save time • Make clearer decisions •
-      🔔 ARAS Ticker: Track Omantel & Ooredoo faster • AI Confidence • Smart Comparison • Save time • Make clearer decisions •
-    </span>
+  <div class="ticker-wrap">
+      <div class="ticker">
+          <span>🚀 ARAS Tip: Choose shorter periods for sharper, faster, and higher-confidence insights.</span>
+          <span>📊 Compare Omantel & Ooredoo in seconds — save time and stay ahead.</span>
+          <span>🤖 AI-powered signals designed to support smarter decisions in Oman’s market.</span>
+          <span>✅ Pro Tip: Shorter ranges help the model learn patterns better and reduce noise.</span>
+      </div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -156,7 +151,7 @@ if st.session_state['start_analysis']:
         delta = df["Close"].diff()
         gain = delta.clip(lower=0).rolling(14).mean()
         loss = -delta.clip(upper=0).rolling(14).mean()
-        rs = gain / loss
+        rs = gain / loss.replace(0, np.nan)
         df["RSI"] = 100 - (100 / (1 + rs))
         return df.dropna()
 
@@ -167,9 +162,7 @@ if st.session_state['start_analysis']:
         X = X.iloc[:-horizon]
         y = y.iloc[:-horizon]
 
-        # ---- Check for empty X or y ----
         if len(X) < 1 or len(y) < 1:
-            st.error("⚠️ Not enough data for prediction with the selected date range.")
             return np.nan, None, None, None
 
         model = RandomForestRegressor(n_estimators=300, random_state=42)
@@ -179,9 +172,12 @@ if st.session_state['start_analysis']:
 
     def confidence_score(model, X_test, y_test):
         mae = mean_absolute_error(y_test, model.predict(X_test))
-        error_conf = max(0, 1 - mae / y_test.mean())
+        base = y_test.mean() if y_test.mean() != 0 else 1.0
+        error_conf = max(0, 1 - mae / base)
+
         tree_preds = np.array([tree.predict(X_test.iloc[-1].values.reshape(1,-1))[0] for tree in model.estimators_])
         stability = 1 / (1 + np.std(tree_preds))
+
         confidence = (0.6 * error_conf + 0.4 * stability) * 100
         return min(95, max(40, confidence))
 
@@ -191,19 +187,6 @@ if st.session_state['start_analysis']:
             if model is None:
                 return {"Name": name, "Last Close": np.nan, "Predicted": np.nan, "Profit %": np.nan,
                         "Trend": "N/A", "Confidence": np.nan}
-
-            # ✅ حماية من قلة البيانات حتى لا ينهار التطبيق
-            if len(X) < 20:
-                last = df.iloc[-1]
-                profit_pct = (pred - last["Close"]) / last["Close"] * 100
-                return {
-                    "Name": name,
-                    "Last Close": last["Close"],
-                    "Predicted": pred,
-                    "Profit %": profit_pct,
-                    "Trend": "N/A (Low data)",
-                    "Confidence": np.nan
-                }
 
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
             conf = confidence_score(model, X_test, y_test)
@@ -223,43 +206,51 @@ if st.session_state['start_analysis']:
     # ---- Load selected stock ----
     df = process_stock_file(files_dict[stock_choice])
 
-    # ---- Date range picker ----
+    # ---- Date range picker (keep calendar) ----
     st.subheader("Select Prediction Period")
-    min_date = df["Date"].min()
-    max_date = df["Date"].max()
+
+    min_date = df["Date"].min().date()
+    max_date = df["Date"].max().date()
+
+    # Default = آخر 90 يوم (بدون ما يفرضها على المستخدم، فقط قيمة بداية مريحة)
+    default_start = max(min_date, (max_date - timedelta(days=90)))
+    default_end = max_date
 
     start_date, end_date = st.date_input(
         "Select Start and End Dates",
-        value=[min_date, max_date],
+        value=[default_start, default_end],
         min_value=min_date,
         max_value=max_date
     )
 
-    # ---- horizon_days ----
+    # ---- Safe horizon handling (NO scary warnings / NO errors) ----
     horizon_days = (end_date - start_date).days
+
     if horizon_days < 1:
-        st.warning("⚠️ End date must be after start date. Using 1 day as default.")
         horizon_days = 1
 
-    if horizon_days >= len(df):
-        st.warning(f"⚠️ The selected period is too long for available data ({len(df)} days). Using maximum available horizon.")
-        horizon_days = len(df) - 1
+    # لا تخلي المستخدم يشوف تحذير مخيف.. بس رسالة تسويقية لطيفة إذا كانت الفترة كبيرة
+    max_horizon_allowed = len(df) - 1
+    if horizon_days >= max_horizon_allowed:
+        horizon_days = max(1, max_horizon_allowed)
+
+        st.info(
+            "Smart Tip: Shorter date ranges help ARAS deliver sharper, faster, and higher-confidence insights — "
+            "try selecting a shorter period to get the best results."
+        )
 
     # ---- Main Prediction ----
     predicted_price, model, X, y = predict_price(df, horizon_days)
-    if model is None:
-        st.stop()
 
-    # ✅ إصلاح ValueError: إذا صار X صغير جداً نوقف التحليل برسالة واضحة
-    if len(X) < 20:
-        st.warning("⚠️ الفترة المختارة كبيرة جدًا مقارنة بالبيانات، فصار عدد نقاط التدريب قليل. قلّل المدة (مثلاً شهر/3 أشهر) للحصول على توقع وثقة.")
+    if model is None:
+        st.info("Smart Tip: Choose a shorter period so ARAS can learn patterns and generate a clearer prediction.")
         st.stop()
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
     confidence = confidence_score(model, X_test, y_test)
 
     current_price = df.iloc[-1]["Close"]
-    profit_pct = (predicted_price - current_price)/current_price*100
+    profit_pct = (predicted_price - current_price) / current_price * 100
     future_date = df.iloc[-1]["Date"] + pd.Timedelta(days=horizon_days)
 
     if profit_pct > 1:
@@ -269,13 +260,13 @@ if st.session_state['start_analysis']:
     else:
         recommendation, rec_color = "Hold ⚪", "#FFA500"
 
-    # ---- Display report as normal text (no box) ----
+    # ---- Display report ----
     st.subheader(f"Stock Report: {stock_choice}")
     st.write(f"**Current Price:** {current_price:.3f} OMR")
     st.write(f"**Predicted Price ({horizon_days} days):** {predicted_price:.3f} OMR")
     st.write(f"**Profit Expectation:** {profit_pct:.2f}%")
     st.write(f"**Confidence Score:** {confidence:.1f}%")
-    st.markdown(f"**Recommendation:** <span style='color:{rec_color}'>{recommendation}</span>", unsafe_allow_html=True)
+    st.markdown(f"**Recommendation:** <span style='color:{rec_color}; font-weight:800; font-size:18px;'>{recommendation}</span>", unsafe_allow_html=True)
 
     # ---- Actual vs Predicted Chart ----
     fig, ax = plt.subplots(figsize=(10,4))
