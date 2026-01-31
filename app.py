@@ -13,202 +13,243 @@ from sklearn.metrics import mean_absolute_error
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
 # =========================
-# Premium UI CSS (NO CLIPPING + Responsive)
+# Corporate UI CSS (Responsive + No Emojis Look)
 # =========================
 st.markdown("""
 <style>
-/* Prevent any horizontal scroll / clipping */
+/* Prevent horizontal overflow */
 html, body, [data-testid="stAppViewContainer"] { overflow-x: hidden !important; }
 
-/* Give extra bottom space so content never hides behind browser bars */
+/* More bottom space (mobile browser bars) */
 .block-container { padding-top: 0.9rem; padding-bottom: 180px !important; }
 
+/* Typography: corporate */
 :root{
   --brand:#0B2447;
   --brand2:#1A4D80;
+  --bg:#F6F9FC;
   --card:#FFFFFF;
-  --muted:#6B7280;
-  --border: rgba(26,77,128,0.18);
+  --text:#0F172A;
+  --muted:#64748B;
+  --border: rgba(15, 23, 42, 0.10);
+  --shadow: 0 10px 22px rgba(2, 8, 23, 0.05);
   --good:#16A34A;
-  --warn:#F59E0B;
+  --warn:#D97706;
   --bad:#DC2626;
 }
 
-html, body, [class*="css"]{ font-family: Arial, sans-serif; }
+html, body, [class*="css"]{
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+  color: var(--text);
+}
 
 /* Top Bar */
 .aras-topbar{
-  background: linear-gradient(90deg, #D6E6F2, #ECF5FF);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding: 10px 14px;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
   display:flex;
   justify-content: space-between;
   align-items:center;
   gap: 14px;
+  box-shadow: var(--shadow);
 }
 .aras-brand{ display:flex; align-items:center; gap: 12px; min-width: 0; }
 .aras-logo{
-  width:44px;height:44px;border-radius:14px;
+  width:42px;height:42px;border-radius:12px;
   background: linear-gradient(135deg, var(--brand), var(--brand2));
   display:flex;align-items:center;justify-content:center;
-  color:white;font-weight:900;letter-spacing:2px;
+  color:white;font-weight:800;letter-spacing:1px;
   flex: 0 0 auto;
 }
-.aras-title{ font-weight:900;color:var(--brand);font-size:15px; white-space: normal; line-height: 1.2; }
-.aras-sub{ font-weight:700;color:var(--muted);font-size:12px;margin-top:1px; white-space: normal; line-height: 1.2; }
-.aras-links{ display:flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
-.aras-links a{ text-decoration:none;color:var(--brand2); font-weight:800;font-size:13px; }
-.aras-links a:hover{ color:#0D2B4F; }
+.aras-title{
+  font-weight:800;
+  color: var(--brand);
+  font-size: 14px;
+  line-height: 1.25;
+}
+.aras-sub{
+  font-weight:600;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+.aras-links{
+  display:flex; flex-wrap: wrap; gap: 10px;
+  justify-content: flex-end; align-items:center;
+}
+.aras-links a{
+  text-decoration:none;
+  color: var(--brand2);
+  font-weight:700;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(26,77,128,0.18);
+  background: rgba(26,77,128,0.04);
+}
+.aras-links a:hover{ background: rgba(26,77,128,0.08); }
 
-/* ✅ Mobile top bar */
+/* Mobile top bar */
 @media (max-width: 768px){
-  .aras-topbar{ flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
-  .aras-title{ font-size: 14px; }
-  .aras-sub{ font-size: 11px; }
+  .aras-topbar{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
   .aras-links{ justify-content: flex-start; }
 }
 
-/* Moving ticker */
-.ticker-wrap{
-  margin-top:10px;
-  overflow:hidden;
-  border-radius:14px;
-  background: #0B2447;
-  border:1px solid rgba(255,255,255,0.14);
-}
-.ticker{
-  display:inline-block;
-  white-space:nowrap;
-  padding-left:100%;
-  animation: tickerMove 18s linear infinite;
-  color:white;
-  font-weight:800;
-  font-size:13px;
-}
-.ticker span{ display:inline-block; padding: 10px 22px; opacity:0.98; }
-@keyframes tickerMove{
-  0% { transform: translate3d(0,0,0); }
-  100% { transform: translate3d(-100%,0,0); }
+/* Helper banner (to guide users to open sidebar) */
+.helper{
+  margin-top: 10px;
+  background: rgba(11,36,71,0.05);
+  border: 1px solid rgba(11,36,71,0.10);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--brand);
+  font-weight: 700;
+  font-size: 12px;
 }
 
 /* Hero */
 .hero{
-  background: radial-gradient(circle at 10% 10%, rgba(26,77,128,0.18), transparent 40%),
-              radial-gradient(circle at 90% 20%, rgba(11,36,71,0.20), transparent 45%),
-              linear-gradient(135deg, #FFFFFF, #F3F8FF);
-  border:1px solid var(--border);
-  border-radius:18px;
+  margin-top: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 18px;
   padding: 18px;
+  box-shadow: var(--shadow);
 }
-.hero h1{ color: var(--brand); font-size: 44px; margin: 0; font-weight: 900; letter-spacing: 0.5px; }
-.hero p{ color: #0D2B4F; font-size: 15px; margin: 10px 0 0 0; font-weight: 700; opacity: 0.9; }
-.hero .tag{
-  display:inline-block; margin-top: 12px;
-  background: rgba(26,77,128,0.10);
-  border: 1px solid rgba(26,77,128,0.20);
-  padding: 8px 12px;
-  border-radius: 999px;
+.hero h1{
   color: var(--brand);
+  font-size: 40px;
+  margin: 0;
   font-weight: 900;
-  font-size: 13px;
-  white-space: normal;
+  letter-spacing: 0.3px;
+}
+.hero p{
+  color: var(--muted);
+  font-size: 14px;
+  margin: 10px 0 0 0;
+  font-weight: 600;
+  line-height: 1.55;
 }
 
-/* ✅ CARDS FIX (NO CLIP) */
+/* Cards */
 .card{
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 14px;
-  box-shadow: 0 10px 20px rgba(11,36,71,0.04);
+  box-shadow: var(--shadow);
 
-  /* IMPORTANT: let it grow naturally */
   height: auto !important;
   min-height: 0 !important;
   overflow: visible !important;
 }
 .card .label{
   color: var(--muted);
-  font-weight: 900;
-  font-size: 12px;
-  letter-spacing: 0.3px;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 .card .value{
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 900;
-  color: #111827;
+  color: var(--text);
   margin-top: 6px;
   white-space: normal;
   word-break: break-word;
 }
 .card .small{
   color: var(--muted);
-  font-weight: 800;
+  font-weight: 600;
   font-size: 12px;
   margin-top: 6px;
   white-space: normal;
   word-break: break-word;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
-/* Badges */
+/* Spacing between cards (especially mobile) */
+.cards-grid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 1024px){
+  .cards-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 768px){
+  .cards-grid{
+    grid-template-columns: 1fr;
+    gap: 16px; /* bigger spacing so they don't feel stuck together */
+  }
+}
+
+/* Badges (clean) */
 .badge{
   display:inline-block;
-  padding: 7px 12px;
+  padding: 7px 10px;
   border-radius: 999px;
-  font-weight: 900;
+  font-weight: 800;
   font-size: 12px;
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid rgba(2,8,23,0.08);
 }
-.badge.good{ background: rgba(22,163,74,0.12); color: var(--good); }
-.badge.warn{ background: rgba(245,158,11,0.14); color: var(--warn); }
-.badge.bad { background: rgba(220,38,38,0.12); color: var(--bad); }
+.badge.good{ background: rgba(22,163,74,0.10); color: var(--good); }
+.badge.warn{ background: rgba(217,119,6,0.12); color: var(--warn); }
+.badge.bad { background: rgba(220,38,38,0.10); color: var(--bad); }
 
 /* Buttons */
 div.stButton > button{
   background: linear-gradient(135deg, var(--brand2), var(--brand));
   color: white !important;
-  font-size: 16px !important;
-  font-weight: 900 !important;
-  padding: 10px 16px !important;
-  border-radius: 14px !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
   border: 0 !important;
 }
 
-/* Mobile font tuning */
-@media (max-width: 768px){
-  .hero h1{ font-size: 34px; }
-  .card .value{ font-size: 18px; }
-  .card .small{ font-size: 12px; }
+/* Section titles */
+.section-title{
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--brand);
+  margin: 10px 0 6px 0;
+}
+
+/* Sidebar styling (subtle) */
+section[data-testid="stSidebar"]{
+  border-right: 1px solid rgba(2,8,23,0.08);
 }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# Top Nav + Ticker
+# Top Bar
 # =========================
 st.markdown("""
 <div class="aras-topbar">
   <div class="aras-brand">
     <div class="aras-logo">ARAS</div>
     <div>
-      <div class="aras-title">ARAS — Smart Investing for the Oman Market</div>
-      <div class="aras-sub">AI insights • Clear recommendations • Investor-friendly confidence</div>
+      <div class="aras-title">ARAS Smart Portfolio</div>
+      <div class="aras-sub">AI insights, clear recommendations, investor-friendly confidence</div>
     </div>
   </div>
   <div class="aras-links">
-    <a href="https://www.msx.om" target="_blank">📰 MSX</a>
-    <a href="https://www.omanobserver.om/section/business" target="_blank">📈 Oman News</a>
+    <a href="https://www.msx.om" target="_blank">MSX</a>
+    <a href="https://www.omanobserver.om/section/business" target="_blank">Oman Business News</a>
   </div>
 </div>
 
-<div class="ticker-wrap">
-  <div class="ticker">
-    <span>🚀 Save time & monitor MSX with ARAS • Clear Buy/Hold/Avoid signals • Confidence score • Simple insights for investors</span>
-    <span>📌 Tip: Short ranges = quick checks • Longer ranges = stronger confidence • ARAS keeps it clear and professional</span>
-  </div>
+<div class="helper">
+  To change company and time period, open the Selections panel using the menu button (top-left) or use the sidebar on desktop.
 </div>
 """, unsafe_allow_html=True)
 
@@ -289,10 +330,10 @@ def dynamic_threshold_pct(df):
 
 def recommendation_from_profit(pct, thr):
     if pct > thr:
-        return "Buy 📈", "good"
+        return "Buy", "good"
     if pct < -thr:
-        return "Avoid/Sell 📉", "bad"
-    return "Hold ⚪", "warn"
+        return "Avoid", "bad"
+    return "Hold", "warn"
 
 def risk_level_from_conf(conf):
     if conf >= 75:
@@ -325,33 +366,31 @@ if not st.session_state.start:
     st.markdown("""
     <div class="hero">
       <h1>ARAS</h1>
-      <p>AI-powered recommendations that help you save time, reduce noise, and invest smarter in the Oman market.</p>
-      <div class="tag">✅ Clear Signals • 📊 Smart Charts • 🎯 Confidence Score</div>
+      <p>AI-powered portfolio insights designed to support investment decisions in the Oman market with clarity and confidence.</p>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-
-    colA, colB = st.columns(2)
-    with colA:
+    c1, c2 = st.columns(2)
+    with c1:
         st.markdown("""
         <div class="card">
           <div class="label">What you get</div>
-          <div class="value">Smart, clear decisions</div>
-          <div class="small">Pick a company + time period → ARAS generates a clean report with charts and confidence.</div>
+          <div class="value">Clear, decision-ready signals</div>
+          <div class="small">Select a company and time period to generate an investor-focused report with charts and confidence.</div>
         </div>
         """, unsafe_allow_html=True)
-    with colB:
+    with c2:
         st.markdown("""
         <div class="card">
-          <div class="label">Designed for Oman investors</div>
-          <div class="value">Fast & simple</div>
-          <div class="small">No complicated indicators. ARAS explains the output in a friendly way.</div>
+          <div class="label">Built for professionals</div>
+          <div class="value">Fast and structured</div>
+          <div class="small">A clean interface that presents key results first, with details available below.</div>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-    if st.button("🚀 Start Analysis"):
+    if st.button("Start Analysis"):
         st.session_state.start = True
         st.rerun()
 
@@ -359,13 +398,14 @@ if not st.session_state.start:
 # DASHBOARD
 # =========================
 if st.session_state.start:
-    st.markdown("## 📌 Investor Dashboard")
+    st.markdown("<div class='section-title'>Investor Dashboard</div>", unsafe_allow_html=True)
 
-    st.sidebar.markdown("### 🔧 Selections")
-    company = st.sidebar.selectbox("Select Company", list(FILES.keys()))
+    # Sidebar selections (works best on desktop; mobile opens from menu button)
+    st.sidebar.markdown("### Selections")
+    company = st.sidebar.selectbox("Company", list(FILES.keys()))
     df_full = process_stock_file(FILES[company])
 
-    preset = st.sidebar.radio("Select Period", ["Today", "1 Week", "1 Month", "1 Year", "3 Years", "Custom (Calendar)"])
+    preset = st.sidebar.radio("Time Period", ["Today", "1 Week", "1 Month", "1 Year", "3 Years", "Custom (Calendar)"])
 
     min_d = df_full["Date"].min().date()
     max_d = df_full["Date"].max().date()
@@ -374,33 +414,38 @@ if st.session_state.start:
         start_d, end_d = period_dates(df_full, preset)
         start_d = max(start_d, min_d)
         end_d = min(end_d, max_d)
-        st.sidebar.caption(f"Selected range: {start_d} → {end_d}")
+        st.sidebar.caption(f"Selected range: {start_d} to {end_d}")
     else:
-        picked = st.sidebar.date_input("Pick Start & End", value=[max_d - timedelta(days=30), max_d],
-                                       min_value=min_d, max_value=max_d)
+        picked = st.sidebar.date_input(
+            "Start and End Date",
+            value=[max_d - timedelta(days=30), max_d],
+            min_value=min_d,
+            max_value=max_d
+        )
         if isinstance(picked, datetime):
             start_d, end_d = picked.date(), picked.date()
         else:
             start_d, end_d = picked[0], picked[1]
         if end_d < start_d:
             start_d, end_d = end_d, start_d
-        st.sidebar.caption(f"Selected range: {start_d} → {end_d}")
+        st.sidebar.caption(f"Selected range: {start_d} to {end_d}")
 
-    st.sidebar.info("Smart Tip: Short ranges = quick signals. For higher-confidence insights, choose a longer period with more history.")
+    st.sidebar.info("Tip: Longer periods typically improve confidence by providing more historical context.")
 
-    if st.sidebar.button("🏠 Back to Home"):
+    if st.sidebar.button("Back to Home"):
         st.session_state.start = False
         st.rerun()
 
+    # Build window
     df_win = df_full[(df_full["Date"].dt.date >= start_d) & (df_full["Date"].dt.date <= end_d)].copy()
     if len(df_win) < 20:
         df_win = df_full.tail(160).copy()
 
+    # Horizon & prediction
     horizon = max(1, (pd.to_datetime(end_d) - pd.to_datetime(start_d)).days)
     pred, model, X, y, horizon = predict_price(df_win, horizon)
 
     base_close = float(df_win["Close"].iloc[-1])
-    latest_close = float(df_full["Close"].iloc[-1])
     profit_pct = (pred - base_close) / base_close * 100 if base_close != 0 else 0.0
 
     thr = dynamic_threshold_pct(df_win)
@@ -408,38 +453,38 @@ if st.session_state.start:
 
     if model is None:
         conf = 45.0
-        mode = "Quick Insight Mode"
+        mode = "Quick Insight"
     else:
         if len(X) < 10 or len(y) < 10:
             conf = 50.0
-            mode = "AI Model Mode (Limited Data)"
+            mode = "Model (Limited Data)"
         else:
             Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, shuffle=False)
             conf = confidence_score(model, Xte, yte)
-            mode = "AI Model Mode"
+            mode = "Model"
 
     risk_text, risk_tone = risk_level_from_conf(conf)
 
-    r1c1, r1c2 = st.columns(2)
-    r2c1, r2c2 = st.columns(2)
+    # Cards grid (responsive)
+    st.markdown("<div class='cards-grid'>", unsafe_allow_html=True)
 
-    r1c1.markdown(f"""
+    st.markdown(f"""
     <div class="card">
       <div class="label">Selected Period Close</div>
       <div class="value">{base_close:.3f} OMR</div>
-      <div class="small">Price at end of chosen range</div>
+      <div class="small">Price at the end of the chosen period</div>
     </div>
     """, unsafe_allow_html=True)
 
-    r1c2.markdown(f"""
+    st.markdown(f"""
     <div class="card">
       <div class="label">Predicted Price</div>
       <div class="value">{pred:.3f} OMR</div>
-      <div class="small">Horizon: {horizon} days</div>
+      <div class="small">Forecast horizon: {horizon} day(s)</div>
     </div>
     """, unsafe_allow_html=True)
 
-    r2c1.markdown(f"""
+    st.markdown(f"""
     <div class="card">
       <div class="label">Expected Change</div>
       <div class="value">{profit_pct:.2f}%</div>
@@ -447,7 +492,7 @@ if st.session_state.start:
     </div>
     """, unsafe_allow_html=True)
 
-    r2c2.markdown(f"""
+    st.markdown(f"""
     <div class="card">
       <div class="label">Recommendation</div>
       <div class="value">{rec}</div>
@@ -455,33 +500,31 @@ if st.session_state.start:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    colx, coly = st.columns([1.4, 1])
-    with colx:
-        st.markdown(f"**AI Confidence:** {conf:.1f}%")
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+    left, right = st.columns([1.4, 1])
+    with left:
+        st.markdown(f"**Model Confidence:** {conf:.1f}%")
         st.progress(confidence_progress(conf))
-        st.caption("Confidence reflects model stability + historical error (or Quick Insight when data is limited).")
-        st.caption(f"Latest market close (for reference): **{latest_close:.3f} OMR**")
-    with coly:
+        st.caption("Confidence reflects model stability and historical error (or a simplified estimate when data is limited).")
+    with right:
         st.markdown(f"<span class='badge {risk_tone}'>{risk_text}</span>", unsafe_allow_html=True)
         st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
         st.markdown(f"<span class='badge {rec_tone}'>{rec}</span>", unsafe_allow_html=True)
 
     st.markdown("---")
 
-    st.subheader("📈 Price Chart (Actual vs Predicted)")
+    st.markdown("<div class='section-title'>Price Chart</div>", unsafe_allow_html=True)
     future_date = df_win.iloc[-1]["Date"] + pd.Timedelta(days=horizon)
 
     fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(df_full["Date"], df_full["Close"], label="Actual Price")
-    ax.scatter(future_date, pred, s=90, label="Predicted Price")
+    ax.plot(df_full["Date"], df_full["Close"], label="Actual")
+    ax.scatter(future_date, pred, s=90, label="Predicted")
     ax.set_title(f"{company} | Actual vs Predicted")
     ax.set_xlabel("Date")
     ax.set_ylabel("Price (OMR)")
     ax.grid(True, alpha=0.3)
     ax.legend()
     st.pyplot(fig)
-
-    st.success("🚀 With ARAS, you don’t just follow the market — you stay ahead of it.")
-
