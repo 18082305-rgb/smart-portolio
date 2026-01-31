@@ -13,11 +13,14 @@ from sklearn.metrics import mean_absolute_error
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
 # =========================
-# Premium UI CSS
+# Premium UI CSS (Responsive + No clipping)
 # =========================
 st.markdown("""
 <style>
-.block-container { padding-top: 1rem; padding-bottom: 100px; }
+/* Avoid horizontal clipping on all screens */
+html, body, [data-testid="stAppViewContainer"] { overflow-x: hidden !important; }
+
+.block-container { padding-top: 0.9rem; padding-bottom: 110px; }
 
 :root{
   --brand:#0B2447;
@@ -40,17 +43,17 @@ html, body, [class*="css"]{
   background: linear-gradient(90deg, #D6E6F2, #ECF5FF);
   border:1px solid var(--border);
   border-radius:14px;
-  padding: 10px 16px;
+  padding: 10px 14px;
   display:flex;
   justify-content: space-between;
   align-items:center;
-  gap: 16px;
+  gap: 14px;
 }
 .aras-brand{
   display:flex;
   align-items:center;
   gap: 12px;
-  min-width: 0; /* مهم للموبايل حتى ما ينقص */
+  min-width: 0;
 }
 .aras-logo{
   width:44px;height:44px;border-radius:14px;
@@ -61,33 +64,30 @@ html, body, [class*="css"]{
 }
 .aras-title{
   font-weight:900;color:var(--brand);font-size:15px;
-  white-space: normal;
-  line-height: 1.2;
+  white-space: normal; line-height: 1.2;
 }
 .aras-sub{
   font-weight:700;color:var(--muted);font-size:12px;margin-top:1px;
-  white-space: normal;
-  line-height: 1.2;
+  white-space: normal; line-height: 1.2;
 }
 .aras-links{
   display:flex;
-  flex-wrap: wrap;  /* مهم */
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
 }
 .aras-links a{
   text-decoration:none;color:var(--brand2);
   font-weight:800;font-size:13px;
-  margin-left: 0;
 }
 .aras-links a:hover{ color:#0D2B4F; }
 
-/* ✅ إصلاح Top Bar للموبايل */
+/* ✅ Mobile top bar */
 @media (max-width: 768px){
   .aras-topbar{
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
     padding: 12px 12px;
   }
   .aras-title{ font-size: 14px; }
@@ -125,7 +125,7 @@ html, body, [class*="css"]{
               linear-gradient(135deg, #FFFFFF, #F3F8FF);
   border:1px solid var(--border);
   border-radius:18px;
-  padding: 22px 22px;
+  padding: 18px 18px;
 }
 .hero h1{
   color: var(--brand);
@@ -153,7 +153,7 @@ html, body, [class*="css"]{
   font-size: 13px;
 }
 
-/* Cards (كما هي لبقية الكروت) */
+/* Cards */
 .card{
   background: var(--card);
   border: 1px solid var(--border);
@@ -161,6 +161,7 @@ html, body, [class*="css"]{
   padding: 14px 14px;
   box-shadow: 0 10px 20px rgba(11,36,71,0.04);
   min-height: 92px;
+  overflow: hidden; /* ✅ prevent text spill */
 }
 .card .label{
   color: var(--muted);
@@ -174,18 +175,16 @@ html, body, [class*="css"]{
   font-weight: 900;
   color: #111827;
   margin-top: 6px;
+  white-space: normal;
+  word-break: break-word; /* ✅ no cut */
 }
 .card .small{
   color: var(--muted);
   font-weight: 800;
   font-size: 12px;
   margin-top: 6px;
-}
-
-/* ✅ تصغير بوكس Selections فقط */
-.selections-card{
-  padding: 10px 12px !important;
-  min-height: unset !important;
+  white-space: normal;
+  word-break: break-word; /* ✅ no cut */
 }
 
 /* Badges */
@@ -201,41 +200,28 @@ html, body, [class*="css"]{
 .badge.warn{ background: rgba(245,158,11,0.14); color: var(--warn); }
 .badge.bad { background: rgba(220,38,38,0.12); color: var(--bad); }
 
-/* Button styling */
+/* Buttons */
 div.stButton > button{
   background: linear-gradient(135deg, var(--brand2), var(--brand));
   color: white !important;
-  font-size: 18px !important;
+  font-size: 16px !important;
   font-weight: 900 !important;
-  padding: 10px 18px !important;
+  padding: 10px 16px !important;
   border-radius: 14px !important;
   border: 0 !important;
 }
-div.stButton > button:hover{
-  filter: brightness(0.95);
-}
+div.stButton > button:hover{ filter: brightness(0.95); }
 
-/* Fixed back button */
-.fixed-back{
-  position: fixed;
-  bottom: 18px;
-  right: 18px;
-  z-index: 99999;
+/* Smaller fonts on small screens for less clipping */
+@media (max-width: 768px){
+  .hero h1{ font-size: 34px; }
+  .card .value{ font-size: 18px; }
 }
-.fixed-back button{
-  background: #111827 !important;
-  color: white !important;
-  font-weight: 900 !important;
-  padding: 10px 16px !important;
-  border-radius: 999px !important;
-  border: 0 !important;
-}
-.fixed-back button:hover{ background:#000 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# Top Nav + Ticker (Marketing)
+# Top Nav + Ticker
 # =========================
 st.markdown("""
 <div class="aras-topbar">
@@ -267,21 +253,26 @@ if "start" not in st.session_state:
     st.session_state.start = False
 
 # =========================
-# Data loading + features
+# Data files
 # =========================
-FILES = {"Omantel.xlsx":"Omantel.xlsx", "Ooredoo.xlsx":"Ooredoo.xlsx"}
+FILES = {"Omantel.xlsx": "Omantel.xlsx", "Ooredoo.xlsx": "Ooredoo.xlsx"}
 
+# =========================
+# Helpers
+# =========================
 def process_stock_file(file):
     df = pd.read_excel(file)
-    df = df[df.iloc[:,0].astype(str).str.contains(r"\d", regex=True)]
+    df = df[df.iloc[:, 0].astype(str).str.contains(r"\d", regex=True)]
     df = df.iloc[:, :6].copy()
-    df.columns = ["Date","Open","High","Low","Close","Volume"]
+    df.columns = ["Date", "Open", "High", "Low", "Close", "Volume"]
+
     df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-    for c in ["Open","High","Low","Close","Volume"]:
+    for c in ["Open", "High", "Low", "Close", "Volume"]:
         df[c] = pd.to_numeric(df[c], errors="coerce")
+
     df = df.dropna().sort_values("Date").reset_index(drop=True)
 
-    df["MA5"]  = df["Close"].rolling(5).mean()
+    df["MA5"] = df["Close"].rolling(5).mean()
     df["MA10"] = df["Close"].rolling(10).mean()
 
     delta = df["Close"].diff()
@@ -293,12 +284,10 @@ def process_stock_file(file):
     return df.dropna().reset_index(drop=True)
 
 def predict_price(df, horizon):
-    # Always returns a value (even for 1 day)
-    features = ["Open","High","Low","Volume","MA5","MA10","RSI"]
+    features = ["Open", "High", "Low", "Volume", "MA5", "MA10", "RSI"]
 
-    # Keep horizon safe
     horizon = int(max(1, horizon))
-    horizon = int(min(horizon, max(1, len(df)-2)))
+    horizon = int(min(horizon, max(1, len(df) - 2)))
 
     X = df[features]
     y = df["Close"].shift(-horizon)
@@ -306,16 +295,16 @@ def predict_price(df, horizon):
     X = X.iloc[:-horizon]
     y = y.iloc[:-horizon]
 
-    # Quick Insight (fallback)
+    # fallback if data is too small
     if len(X) < 12 or len(y) < 12:
         last = float(df["Close"].iloc[-1])
-        ma5  = float(df["MA5"].iloc[-1]) if "MA5" in df.columns else last
+        ma5 = float(df["MA5"].iloc[-1]) if "MA5" in df.columns else last
         pred = (0.75 * last) + (0.25 * ma5)
         return float(pred), None, None, None, horizon
 
     model = RandomForestRegressor(n_estimators=350, random_state=42)
     model.fit(X, y)
-    pred = float(model.predict(X.iloc[-1].values.reshape(1,-1))[0])
+    pred = float(model.predict(X.iloc[-1].values.reshape(1, -1))[0])
     return pred, model, X, y, horizon
 
 def confidence_score(model, X_test, y_test):
@@ -325,7 +314,7 @@ def confidence_score(model, X_test, y_test):
     base = float(y_test.mean()) if float(y_test.mean()) != 0 else 1.0
     error_conf = max(0, 1 - mae / base)
 
-    tree_preds = np.array([tree.predict(X_test.iloc[-1].values.reshape(1,-1))[0] for tree in model.estimators_])
+    tree_preds = np.array([tree.predict(X_test.iloc[-1].values.reshape(1, -1))[0] for tree in model.estimators_])
     stability = 1 / (1 + np.std(tree_preds))
 
     conf = (0.6 * error_conf + 0.4 * stability) * 100
@@ -338,10 +327,24 @@ def risk_level_from_conf(conf):
         return "Medium Risk", "warn"
     return "High Risk", "bad"
 
-def recommendation_from_profit(pct):
-    if pct > 1:
+def dynamic_threshold_pct(df):
+    """
+    ✅ Fix "Always Hold":
+    threshold becomes dynamic based on recent volatility.
+    Higher volatility -> higher threshold needed
+    Lower volatility -> smaller threshold enough
+    """
+    rets = df["Close"].pct_change().dropna()
+    if len(rets) < 20:
+        return 0.8  # fallback threshold %
+    vol = float(rets.tail(60).std() * 100)  # volatility in %
+    thr = max(0.6, min(3.0, vol * 0.9))     # clamp between 0.6% and 3%
+    return float(thr)
+
+def recommendation_from_profit(pct, thr):
+    if pct > thr:
         return "Buy 📈", "good"
-    if pct < -1:
+    if pct < -thr:
         return "Avoid/Sell 📉", "bad"
     return "Hold ⚪", "warn"
 
@@ -356,12 +359,11 @@ def period_dates(df, preset):
     if preset == "1 Year":
         return (mx - timedelta(days=365)), mx
     if preset == "3 Years":
-        return (mx - timedelta(days=365*3)), mx
+        return (mx - timedelta(days=365 * 3)), mx
     return df["Date"].min().date(), mx
 
 def confidence_progress(conf):
-    # show as 0..1
-    return max(0.0, min(1.0, conf/100.0))
+    return max(0.0, min(1.0, conf / 100.0))
 
 # =========================
 # HOME
@@ -405,58 +407,68 @@ if not st.session_state.start:
 if st.session_state.start:
     st.markdown("## 📌 Investor Dashboard")
 
-    # Sidebar controls
-    left, right = st.columns([1.05, 1.95])
+    # ✅ Best responsive solution in Streamlit: Sidebar for controls
+    st.sidebar.markdown("### 🔧 Selections")
 
-    with left:
-        # ✅ هنا فقط أضفنا selections-card
-        st.markdown("<div class='card selections-card'><div class='label'>Selections</div>", unsafe_allow_html=True)
+    company = st.sidebar.selectbox("Select Company", list(FILES.keys()))
+    df_full = process_stock_file(FILES[company])
 
-        company = st.selectbox("Select Company", list(FILES.keys()))
+    preset = st.sidebar.radio(
+        "Select Period",
+        ["Today", "1 Week", "1 Month", "1 Year", "3 Years", "Custom (Calendar)"],
+    )
 
-        df_full = process_stock_file(FILES[company])
+    min_d = df_full["Date"].min().date()
+    max_d = df_full["Date"].max().date()
 
-        preset = st.radio("Select Period", ["Today","1 Week","1 Month","1 Year","3 Years","Custom (Calendar)"])
-
-        min_d = df_full["Date"].min().date()
-        max_d = df_full["Date"].max().date()
-
-        if preset != "Custom (Calendar)":
-            start_d, end_d = period_dates(df_full, preset)
-            start_d = max(start_d, min_d)
-            end_d   = min(end_d, max_d)
-            st.caption(f"Selected range: {start_d} → {end_d}")
+    if preset != "Custom (Calendar)":
+        start_d, end_d = period_dates(df_full, preset)
+        start_d = max(start_d, min_d)
+        end_d = min(end_d, max_d)
+        st.sidebar.caption(f"Selected range: {start_d} → {end_d}")
+    else:
+        picked = st.sidebar.date_input(
+            "Pick Start & End",
+            value=[max_d - timedelta(days=30), max_d],
+            min_value=min_d,
+            max_value=max_d,
+        )
+        if isinstance(picked, datetime):
+            start_d, end_d = picked.date(), picked.date()
         else:
-            picked = st.date_input(
-                "Pick Start & End",
-                value=[max_d - timedelta(days=30), max_d],
-                min_value=min_d,
-                max_value=max_d
-            )
-            if isinstance(picked, (datetime,)):
-                start_d, end_d = picked.date(), picked.date()
-            else:
-                start_d, end_d = picked[0], picked[1]
-            if end_d < start_d:
-                start_d, end_d = end_d, start_d
+            start_d, end_d = picked[0], picked[1]
+        if end_d < start_d:
+            start_d, end_d = end_d, start_d
+        st.sidebar.caption(f"Selected range: {start_d} → {end_d}")
 
-        st.info("Smart Tip: Short ranges = quick signals. For higher-confidence insights, select a longer period with more history.")
+    st.sidebar.info(
+        "Smart Tip: Short ranges = quick signals. For higher-confidence insights, choose a longer period with more history."
+    )
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    # ✅ Back button always visible
+    if st.sidebar.button("🏠 Back to Home"):
+        st.session_state.start = False
+        st.rerun()
 
     # Build window
     df_win = df_full[(df_full["Date"].dt.date >= start_d) & (df_full["Date"].dt.date <= end_d)].copy()
     if len(df_win) < 20:
-        df_win = df_full.tail(120).copy()
+        # keep the selected end date logic, but ensure enough data for model
+        df_win = df_full.tail(160).copy()
 
     # Horizon
     horizon = max(1, (pd.to_datetime(end_d) - pd.to_datetime(start_d)).days)
     pred, model, X, y, horizon = predict_price(df_win, horizon)
 
-    current = float(df_full.iloc[-1]["Close"])
-    profit_pct = (pred - current) / current * 100 if current != 0 else 0.0
+    # ✅ current should be the close at the end of selected window (not always latest)
+    base_close = float(df_win["Close"].iloc[-1])
+    latest_close = float(df_full["Close"].iloc[-1])
 
-    rec, rec_tone = recommendation_from_profit(profit_pct)
+    profit_pct = (pred - base_close) / base_close * 100 if base_close != 0 else 0.0
+
+    # ✅ dynamic threshold to avoid always Hold
+    thr = dynamic_threshold_pct(df_win)
+    rec, rec_tone = recommendation_from_profit(profit_pct, thr)
 
     if model is None:
         conf = 45.0
@@ -472,108 +484,104 @@ if st.session_state.start:
 
     risk_text, risk_tone = risk_level_from_conf(conf)
 
-    # Right side results
-    with right:
-        # Top cards
-        c1, c2, c3, c4 = st.columns(4)
-        c1.markdown(f"""
-        <div class="card">
-          <div class="label">Current Price</div>
-          <div class="value">{current:.3f} OMR</div>
-          <div class="small">Latest close</div>
-        </div>
-        """, unsafe_allow_html=True)
+    # =========================
+    # Results (Main area)
+    # =========================
+    # ✅ 2x2 cards (safe on laptop + mobile, no clipping)
+    r1c1, r1c2 = st.columns(2)
+    r2c1, r2c2 = st.columns(2)
 
-        c2.markdown(f"""
-        <div class="card">
-          <div class="label">Predicted Price</div>
-          <div class="value">{pred:.3f} OMR</div>
-          <div class="small">Horizon: {horizon} days</div>
-        </div>
-        """, unsafe_allow_html=True)
+    r1c1.markdown(f"""
+    <div class="card">
+      <div class="label">Selected Period Close</div>
+      <div class="value">{base_close:.3f} OMR</div>
+      <div class="small">Price at end of chosen range</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        c3.markdown(f"""
-        <div class="card">
-          <div class="label">Expected Change</div>
-          <div class="value">{profit_pct:.2f}%</div>
-          <div class="small">Based on selected period</div>
-        </div>
-        """, unsafe_allow_html=True)
+    r1c2.markdown(f"""
+    <div class="card">
+      <div class="label">Predicted Price</div>
+      <div class="value">{pred:.3f} OMR</div>
+      <div class="small">Horizon: {horizon} days</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        c4.markdown(f"""
-        <div class="card">
-          <div class="label">Recommendation</div>
-          <div class="value">{rec}</div>
-          <div class="small">Mode: {mode}</div>
-        </div>
-        """, unsafe_allow_html=True)
+    r2c1.markdown(f"""
+    <div class="card">
+      <div class="label">Expected Change</div>
+      <div class="value">{profit_pct:.2f}%</div>
+      <div class="small">Signal threshold: ±{thr:.2f}% (volatility-based)</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    r2c2.markdown(f"""
+    <div class="card">
+      <div class="label">Recommendation</div>
+      <div class="value">{rec}</div>
+      <div class="small">Mode: {mode}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-        # Confidence + Risk
-        colx, coly = st.columns([1.3, 1])
-        with colx:
-            st.markdown(f"**AI Confidence:** {conf:.1f}%")
-            st.progress(confidence_progress(conf))
-            st.caption("Confidence reflects model stability and error on historical splits (or Quick Insight when data is limited).")
-        with coly:
-            st.markdown(f"<span class='badge {risk_tone}'>{risk_text}</span>", unsafe_allow_html=True)
-            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-            st.markdown(f"<span class='badge {rec_tone}'>{rec}</span>", unsafe_allow_html=True)
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
-        st.markdown("---")
+    colx, coly = st.columns([1.4, 1])
+    with colx:
+        st.markdown(f"**AI Confidence:** {conf:.1f}%")
+        st.progress(confidence_progress(conf))
+        st.caption("Confidence reflects model stability + historical error (or Quick Insight when data is limited).")
+        st.caption(f"Latest market close (for reference): **{latest_close:.3f} OMR**")
+    with coly:
+        st.markdown(f"<span class='badge {risk_tone}'>{risk_text}</span>", unsafe_allow_html=True)
+        st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+        st.markdown(f"<span class='badge {rec_tone}'>{rec}</span>", unsafe_allow_html=True)
 
-        # Charts
-        st.subheader("📈 Price Chart (Actual vs Predicted)")
-        future_date = df_full.iloc[-1]["Date"] + pd.Timedelta(days=horizon)
+    st.markdown("---")
 
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.plot(df_full["Date"], df_full["Close"], label="Actual Price")
-        ax.scatter(future_date, pred, s=90, label="Predicted Price")
-        ax.set_title(f"{company} | Actual vs Predicted")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Price (OMR)")
-        ax.grid(True, alpha=0.3)
-        ax.legend()
-        st.pyplot(fig)
+    # Charts
+    st.subheader("📈 Price Chart (Actual vs Predicted)")
+    future_date = df_win.iloc[-1]["Date"] + pd.Timedelta(days=horizon)
 
-        # Compare section
-        st.subheader("🆚 Comparison (Omantel vs Ooredoo)")
-        df_om = process_stock_file(FILES["Omantel.xlsx"])
-        df_oo = process_stock_file(FILES["Ooredoo.xlsx"])
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(df_full["Date"], df_full["Close"], label="Actual Price")
+    ax.scatter(future_date, pred, s=90, label="Predicted Price")
+    ax.set_title(f"{company} | Actual vs Predicted")
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Price (OMR)")
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+    st.pyplot(fig)
 
-        def quick_analyze(df_comp, name):
-            df_cut = df_comp.tail(max(120, horizon + 40)).copy()
-            p, m, Xc, yc, _ = predict_price(df_cut, horizon)
-            last = float(df_comp.iloc[-1]["Close"])
-            pct = (p-last)/last*100 if last!=0 else 0.0
-            if m is None or Xc is None or len(Xc) < 10:
-                cf = 45.0
-            else:
-                Xtr, Xte, ytr, yte = train_test_split(Xc, yc, test_size=0.2, shuffle=False)
-                cf = confidence_score(m, Xte, yte)
-            trend = "Up ✅" if pct > 0 else "Down ❌"
-            return {"Stock": name, "Expected %": pct, "Confidence %": cf, "Trend": trend}
+    # Compare section
+    st.subheader("🆚 Comparison (Omantel vs Ooredoo)")
+    df_om = process_stock_file(FILES["Omantel.xlsx"])
+    df_oo = process_stock_file(FILES["Ooredoo.xlsx"])
 
-        r1 = quick_analyze(df_om, "Omantel")
-        r2 = quick_analyze(df_oo, "Ooredoo")
+    def quick_analyze(df_comp, name):
+        df_cut = df_comp.tail(max(160, horizon + 60)).copy()
+        p, m, Xc, yc, _ = predict_price(df_cut, horizon)
+        last = float(df_cut["Close"].iloc[-1])
+        pct = (p - last) / last * 100 if last != 0 else 0.0
+        thr_local = dynamic_threshold_pct(df_cut)
+        if m is None or Xc is None or len(Xc) < 10:
+            cf = 45.0
+        else:
+            Xtr, Xte, ytr, yte = train_test_split(Xc, yc, test_size=0.2, shuffle=False)
+            cf = confidence_score(m, Xte, yte)
+        signal = "Buy" if pct > thr_local else ("Sell/Avoid" if pct < -thr_local else "Hold")
+        return {"Stock": name, "Expected %": round(pct, 2), "Threshold %": round(thr_local, 2), "Signal": signal, "Confidence %": round(cf, 1)}
 
-        cmp_df = pd.DataFrame([r1, r2])
-        st.dataframe(cmp_df, use_container_width=True)
+    r1 = quick_analyze(df_om, "Omantel")
+    r2 = quick_analyze(df_oo, "Ooredoo")
 
-        fig2, ax2 = plt.subplots(figsize=(6, 4))
-        ax2.bar(["Omantel", "Ooredoo"], [r1["Expected %"], r2["Expected %"]])
-        ax2.set_title("Expected Profit/Loss (%)")
-        ax2.set_ylabel("%")
-        ax2.grid(True, axis="y", alpha=0.3)
-        st.pyplot(fig2)
+    cmp_df = pd.DataFrame([r1, r2])
+    st.dataframe(cmp_df, use_container_width=True)
 
-        # Closing
-        st.success("🚀 With ARAS, you don’t just follow the market — you stay ahead of it.")
+    fig2, ax2 = plt.subplots(figsize=(6, 4))
+    ax2.bar(["Omantel", "Ooredoo"], [r1["Expected %"], r2["Expected %"]])
+    ax2.set_title("Expected Profit/Loss (%)")
+    ax2.set_ylabel("%")
+    ax2.grid(True, axis="y", alpha=0.3)
+    st.pyplot(fig2)
 
-    # Fixed Back to Home
-    st.markdown('<div class="fixed-back">', unsafe_allow_html=True)
-    if st.button("🏠 Back to Home"):
-        st.session_state.start = False
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.success("🚀 With ARAS, you don’t just follow the market — you stay ahead of it.")
