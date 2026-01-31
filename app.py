@@ -13,7 +13,7 @@ from sklearn.metrics import mean_absolute_error
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
 # =========================
-# Premium UI CSS (Responsive + Professional)
+# Premium UI CSS (Responsive + Fix cut + Professional)
 # =========================
 st.markdown("""
 <style>
@@ -21,7 +21,7 @@ st.markdown("""
 .block-container{
   padding-top: 1rem;
   padding-bottom: 90px;
-  max-width: 1250px;      /* يمنع تمدد مبالغ فيه ويحل قص الكروت */
+  max-width: 1250px;
   margin: 0 auto;
 }
 *{ box-sizing: border-box; }
@@ -40,6 +40,21 @@ st.markdown("""
 
 html, body, [class*="css"]{
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ✅ أهم تعديل: خلي أعمدة Streamlit تلتف (wrap) وما تنقص */
+div[data-testid="stHorizontalBlock"]{
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+}
+div[data-testid="column"]{
+  flex: 1 1 340px !important;   /* كل عمود له حد أدنى */
+  min-width: 340px !important;
+}
+@media (max-width: 768px){
+  div[data-testid="column"]{
+    min-width: 100% !important; /* على الجوال: عمود كامل */
+  }
 }
 
 /* Top Bar */
@@ -88,7 +103,6 @@ html, body, [class*="css"]{
 }
 .aras-links a:hover{ color:#0D2B4F; }
 
-/* Mobile Top Bar */
 @media (max-width: 768px){
   .aras-topbar{
     flex-direction: column;
@@ -100,7 +114,7 @@ html, body, [class*="css"]{
   .aras-links{ justify-content: flex-start; }
 }
 
-/* Ticker (Professional, smaller on mobile) */
+/* Ticker */
 .ticker-wrap{
   margin-top:10px;
   overflow:hidden;
@@ -174,7 +188,8 @@ html, body, [class*="css"]{
   box-shadow: 0 10px 20px rgba(11,36,71,0.04);
   min-height: 96px;
   width: 100%;
-  margin-bottom: 12px;  /* ✅ يمنع تلاصق البوكسات */
+  margin-bottom: 12px;
+  overflow: hidden; /* ✅ يمنع قص داخلي */
 }
 .card .label{
   color: var(--muted);
@@ -243,7 +258,7 @@ div.stButton > button:hover{ filter: brightness(0.95); }
 }
 .fixed-back button:hover{ background:#000 !important; }
 
-/* ✅ Sidebar hint: try multiple selectors (Streamlit versions differ) */
+/* ✅ اكتب Open menu جنب سهم السايدبار (بدون شارة عائمة) */
 button[data-testid="collapsedControl"]::after,
 button[data-testid="stSidebarCollapsedControl"]::after,
 div[data-testid="collapsedControl"] button::after,
@@ -259,25 +274,6 @@ button[title="Open sidebar navigation"]::after{
   margin-left: 8px;
   opacity: 0.95;
   white-space: nowrap;
-}
-
-/* ✅ Fallback badge (always visible) */
-.menu-hint{
-  position: fixed;
-  top: 86px;
-  left: 14px;
-  z-index: 999999;
-  background: rgba(214,230,242,0.96);
-  border: 1px solid rgba(26,77,128,0.25);
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 13px;
-  font-weight: 900;
-  color: #0B2447;
-  box-shadow: 0 8px 18px rgba(11,36,71,0.12);
-}
-@media (max-width: 768px){
-  .menu-hint{ top: 78px; left: 12px; font-size: 12px; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -308,8 +304,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ✅ Fallback hint (guaranteed visible)
-st.markdown('<div class="menu-hint">⇦ Open menu</div>', unsafe_allow_html=True)
+# ✅ Fallback (مو عائم ولا يتحرك) — يظهر فقط كسطر عادي أعلى الصفحة
+st.caption("Open menu from the top-left arrow to choose company and period.")
 
 # =========================
 # Session state
@@ -318,7 +314,7 @@ if "start" not in st.session_state:
     st.session_state.start = False
 
 # =========================
-# Data loading + features
+# Data
 # =========================
 FILES = {"Omantel.xlsx": "Omantel.xlsx", "Ooredoo.xlsx": "Ooredoo.xlsx"}
 
@@ -355,7 +351,6 @@ def predict_price(df, horizon):
     X = X.iloc[:-horizon]
     y = y.iloc[:-horizon]
 
-    # Fallback if not enough data
     if len(X) < 12 or len(y) < 12:
         last = float(df["Close"].iloc[-1])
         ma5 = float(df["MA5"].iloc[-1]) if "MA5" in df.columns else last
@@ -388,7 +383,6 @@ def risk_level_from_conf(conf):
     return "High Risk", "bad"
 
 def recommendation_from_profit(pct):
-    # (تقدر تغير العتبة لاحقاً حسب رغبتك)
     if pct > 1:
         return "Buy", "good"
     if pct < -1:
@@ -454,12 +448,10 @@ if not st.session_state.start:
 # DASHBOARD
 # =========================
 if st.session_state.start:
-    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
     st.markdown("## Investor Dashboard")
 
-    # ✅ Sidebar selections (رجعنا المنيو الجانبي)
+    # Sidebar selections
     st.sidebar.markdown("### Selections")
-
     company = st.sidebar.selectbox("Select Company", list(FILES.keys()))
     df_full = process_stock_file(FILES[company])
 
@@ -517,9 +509,9 @@ if st.session_state.start:
 
     risk_text, risk_tone = risk_level_from_conf(conf)
 
-    # ✅ Results grid: 2×2 (fix cut on laptop + better mobile)
-    row1a, row1b = st.columns(2, gap="large")
-    row2a, row2b = st.columns(2, gap="large")
+    # ✅ Cards: still 2x2, لكن الآن wrap يمنع أي نقص
+    row1a, row1b = st.columns(2)
+    row2a, row2b = st.columns(2)
 
     row1a.markdown(f"""
     <div class="card">
@@ -555,7 +547,7 @@ if st.session_state.start:
 
     # Confidence + badges
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-    colx, coly = st.columns([1.4, 1], gap="large")
+    colx, coly = st.columns([1.4, 1])
 
     with colx:
         st.markdown(f"**AI Confidence:** {conf:.1f}%")
@@ -620,4 +612,5 @@ if st.session_state.start:
         st.session_state.start = False
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
+
 
