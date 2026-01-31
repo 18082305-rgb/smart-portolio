@@ -13,7 +13,7 @@ from sklearn.metrics import mean_absolute_error
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
 # =========================
-# Premium UI CSS (Responsive + Fix cut + Professional)
+# Premium UI CSS (Responsive + Professional)
 # =========================
 st.markdown("""
 <style>
@@ -28,7 +28,6 @@ st.markdown("""
 :root{
   --brand:#0B2447;
   --brand2:#1A4D80;
-  --bg:#F6F9FC;
   --card:#FFFFFF;
   --muted:#6B7280;
   --border: rgba(26,77,128,0.18);
@@ -51,9 +50,7 @@ div[data-testid="column"]{
   min-width: 340px !important;
 }
 @media (max-width: 768px){
-  div[data-testid="column"]{
-    min-width: 100% !important;
-  }
+  div[data-testid="column"]{ min-width: 100% !important; }
 }
 
 /* Top Bar */
@@ -257,7 +254,7 @@ div.stButton > button:hover{ filter: brightness(0.95); }
 }
 .fixed-back button:hover{ background:#000 !important; }
 
-/* ✅ put "Open menu" near sidebar arrow */
+/* ✅ put "Open menu" text near the sidebar arrow */
 button[data-testid="collapsedControl"]::after,
 button[data-testid="stSidebarCollapsedControl"]::after,
 div[data-testid="collapsedControl"] button::after,
@@ -297,13 +294,13 @@ st.markdown("""
 
 <div class="ticker-wrap">
   <div class="ticker">
-    <span>Save time and monitor MSX with ARAS • Clear buy/hold/avoid signals • Confidence score • Investor-friendly summaries</span>
-    <span>Tip: Short ranges = quick checks • Longer ranges = stronger confidence</span>
+    <span>Monitor MSX with ARAS • Clear signals • Confidence score • Professional summaries</span>
+    <span>Tip: Choose horizon 5–20 days for clearer signals</span>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.caption("Open menu from the top-left arrow to choose company and period.")
+st.caption("Use the top-left arrow to open the menu and change selections.")
 
 # =========================
 # Session state
@@ -312,7 +309,7 @@ if "start" not in st.session_state:
     st.session_state.start = False
 
 # =========================
-# Data
+# Files
 # =========================
 FILES = {"Omantel.xlsx": "Omantel.xlsx", "Ooredoo.xlsx": "Ooredoo.xlsx"}
 
@@ -337,31 +334,34 @@ def process_stock_file(file):
 
     return df.dropna().reset_index(drop=True)
 
-def predict_price(df, horizon):
+def predict_price(df_train, horizon):
     features = ["Open", "High", "Low", "Volume", "MA5", "MA10", "RSI"]
 
     horizon = int(max(1, horizon))
-    horizon = int(min(horizon, max(1, len(df) - 2)))
+    horizon = int(min(horizon, max(1, len(df_train) - 2)))
 
-    X = df[features]
-    y = df["Close"].shift(-horizon)
+    X = df_train[features]
+    y = df_train["Close"].shift(-horizon)
 
     X = X.iloc[:-horizon]
     y = y.iloc[:-horizon]
 
-    if len(X) < 12 or len(y) < 12:
-        last = float(df["Close"].iloc[-1])
-        ma5 = float(df["MA5"].iloc[-1]) if "MA5" in df.columns else last
-        pred = (0.75 * last) + (0.25 * ma5)
+    # fallback (more responsive than old one)
+    if len(X) < 20 or len(y) < 20:
+        last = float(df_train["Close"].iloc[-1])
+        ma5 = float(df_train["MA5"].iloc[-1])
+        ma10 = float(df_train["MA10"].iloc[-1])
+        # small momentum blend
+        pred = 0.65 * last + 0.25 * ma5 + 0.10 * ma10
         return float(pred), None, None, None, horizon
 
-    model = RandomForestRegressor(n_estimators=350, random_state=42)
+    model = RandomForestRegressor(n_estimators=450, random_state=42)
     model.fit(X, y)
     pred = float(model.predict(X.iloc[-1].values.reshape(1, -1))[0])
     return pred, model, X, y, horizon
 
 def confidence_score(model, X_test, y_test):
-    if model is None or len(X_test) < 5:
+    if model is None or len(X_test) < 10:
         return 45.0
     mae = mean_absolute_error(y_test, model.predict(X_test))
     base = float(y_test.mean()) if float(y_test.mean()) != 0 else 1.0
@@ -380,25 +380,55 @@ def risk_level_from_conf(conf):
         return "Medium Risk", "warn"
     return "High Risk", "bad"
 
-# ✅ NEW: volatility-based threshold (percentage)
+# ✅ أكثر حساسية من السابق (يقلل Hold)
 def volatility_threshold_pct(df_ref, horizon_days):
-    # daily returns
     rets = df_ref["Close"].pct_change().dropna()
-    if len(rets) < 15:
-        return 0.8  # fallback
-    daily_vol = float(rets.tail(60).std())  # e.g. 0.01 = 1%
-    # scale with sqrt(time)
+    if len(rets) < 20:
+        return 0.35
+    daily_vol = float(rets.tail(80).std())  # recent vol
     scaled = daily_vol * np.sqrt(max(1, horizon_days)) * 100.0
-    # keep within reasonable range
-    return float(min(3.5, max(0.35, scaled * 0.9)))
+    # more sensitive band
+    thr = scaled * 0.55
+    return float(min(2.2, max(0.20, thr)))
 
-# ✅ NEW: recommendation uses dynamic threshold
-def recommendation_from_profit(pct, thr):
-    if pct > thr:
-        return "Buy", "good"
-    if pct < -thr:
-        return "Avoid/Sell", "bad"
-    return "Hold", "warn"
+def signal_boost_from_indicators(df_last):
+    # returns extra bias in percent terms
+    rsi = float(df_last["RSI"])
+    ma5 = float(df_last["MA5"])
+    ma10 = float(df_last["MA10"])
+    close = float(df_last["Close"])
+
+    bias = 0.0
+    # trend bias
+    if ma5 > ma10:
+        bias += 0.15
+    elif ma5 < ma10:
+        bias -= 0.15
+
+    # RSI bias (soft)
+    if rsi < 35:
+        bias += 0.25
+    elif rsi > 65:
+        bias -= 0.25
+
+    # price vs MA10
+    if close > ma10:
+        bias += 0.10
+    elif close < ma10:
+        bias -= 0.10
+
+    return bias
+
+def recommendation_from_profit(pct, thr, df_last):
+    # add indicator bias so it doesn't stay Hold forever
+    bias = signal_boost_from_indicators(df_last)
+    adj = pct + bias
+
+    if adj > thr:
+        return "Buy", "good", adj, bias
+    if adj < -thr:
+        return "Avoid/Sell", "bad", adj, bias
+    return "Hold", "warn", adj, bias
 
 def period_dates(df, preset):
     mx = df["Date"].max().date()
@@ -437,7 +467,7 @@ if not st.session_state.start:
         <div class="card">
           <div class="label">What you get</div>
           <div class="value">Smart, clear decisions</div>
-          <div class="small">Pick a company and time period → ARAS generates a clean report with charts and confidence.</div>
+          <div class="small">Pick a company and horizon → ARAS generates a clean report with charts and a confidence score.</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -445,8 +475,8 @@ if not st.session_state.start:
         st.markdown("""
         <div class="card">
           <div class="label">Designed for Oman investors</div>
-          <div class="value">Fast and simple</div>
-          <div class="small">No complicated indicators. ARAS explains results in a professional, investor-friendly way.</div>
+          <div class="value">Fast and professional</div>
+          <div class="small">Simple indicators. Professional output that fits a tech product.</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -461,12 +491,13 @@ if not st.session_state.start:
 if st.session_state.start:
     st.markdown("## Investor Dashboard")
 
-    # Sidebar selections
+    # Sidebar selections (kept!)
     st.sidebar.markdown("### Selections")
     company = st.sidebar.selectbox("Select Company", list(FILES.keys()))
     df_full = process_stock_file(FILES[company])
 
-    preset = st.sidebar.radio("Select Period", ["Today", "1 Week", "1 Month", "1 Year", "3 Years", "Custom (Calendar)"])
+    # History view period (for charts only)
+    preset = st.sidebar.radio("History View", ["1 Week", "1 Month", "1 Year", "3 Years", "Custom (Calendar)"], index=1)
 
     min_d = df_full["Date"].min().date()
     max_d = df_full["Date"].max().date()
@@ -475,7 +506,7 @@ if st.session_state.start:
         start_d, end_d = period_dates(df_full, preset)
         start_d = max(start_d, min_d)
         end_d = min(end_d, max_d)
-        st.sidebar.caption(f"Selected range: {start_d} → {end_d}")
+        st.sidebar.caption(f"History range: {start_d} → {end_d}")
     else:
         picked = st.sidebar.date_input(
             "Pick Start & End",
@@ -490,32 +521,36 @@ if st.session_state.start:
         if end_d < start_d:
             start_d, end_d = end_d, start_d
 
-    st.sidebar.info("Tip: Short ranges are fine for quick checks. Longer ranges can improve confidence.")
+    # ✅ NEW: Forecast horizon separated (fixes Hold issue)
+    horizon = st.sidebar.select_slider(
+        "Forecast Horizon (days)",
+        options=[1, 3, 5, 10, 20, 30, 60],
+        value=10
+    )
 
-    # Build window (selected period)
-    df_win = df_full[(df_full["Date"].dt.date >= start_d) & (df_full["Date"].dt.date <= end_d)].copy()
-    if len(df_win) < 20:
-        df_win = df_full.tail(120).copy()
+    st.sidebar.info("Tip: Horizon 5–20 days often shows clearer signals than 1 day.")
 
-    # Horizon
-    horizon = max(1, (pd.to_datetime(end_d) - pd.to_datetime(start_d)).days)
-    pred, model, X, y, horizon = predict_price(df_win, horizon)
+    # Training window: last ~260 rows (stronger model + less Hold)
+    df_train = df_full.tail(max(260, horizon + 80)).copy()
+    pred, model, X, y, horizon = predict_price(df_train, horizon)
 
-    # ✅ FIX: current must be end of selected period, not latest of file
-    current = float(df_win.iloc[-1]["Close"])
-    current_date = df_win.iloc[-1]["Date"]
+    # Current = latest close (real investor view)
+    current = float(df_full.iloc[-1]["Close"])
+    current_date = df_full.iloc[-1]["Date"]
 
     profit_pct = (pred - current) / current * 100 if current != 0 else 0.0
+    thr = volatility_threshold_pct(df_train, horizon)
 
-    # ✅ FIX: volatility threshold
-    thr = volatility_threshold_pct(df_win, horizon)
-    rec, rec_tone = recommendation_from_profit(profit_pct, thr)
+    # Recommendation with indicator bias
+    df_last = df_train.iloc[-1]
+    rec, rec_tone, adj_pct, bias = recommendation_from_profit(profit_pct, thr, df_last)
 
+    # Confidence
     if model is None:
         conf = 45.0
         mode = "Quick Insight"
     else:
-        if len(X) < 10 or len(y) < 10:
+        if len(X) < 20 or len(y) < 20:
             conf = 50.0
             mode = "AI Model (Limited Data)"
         else:
@@ -525,51 +560,48 @@ if st.session_state.start:
 
     risk_text, risk_tone = risk_level_from_conf(conf)
 
-    # Cards (wrap-safe)
-    row1a, row1b = st.columns(2)
-    row2a, row2b = st.columns(2)
+    # Cards
+    c1, c2 = st.columns(2)
+    c3, c4 = st.columns(2)
 
-    row1a.markdown(f"""
+    c1.markdown(f"""
     <div class="card">
-      <div class="label">Selected Period Close</div>
+      <div class="label">Current Price</div>
       <div class="value">{current:.3f} OMR</div>
       <div class="small">Date: {current_date.date()}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    row1b.markdown(f"""
+    c2.markdown(f"""
     <div class="card">
       <div class="label">Predicted Price</div>
       <div class="value">{pred:.3f} OMR</div>
-      <div class="small">Horizon: {horizon} days</div>
+      <div class="small">Horizon: {horizon} days • Mode: {mode}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    row2a.markdown(f"""
+    c3.markdown(f"""
     <div class="card">
       <div class="label">Expected Change</div>
       <div class="value">{profit_pct:.2f}%</div>
-      <div class="small">Signal threshold: ±{thr:.2f}% (volatility-based)</div>
+      <div class="small">Threshold: ±{thr:.2f}% • Indicator bias: {bias:+.2f}%</div>
     </div>
     """, unsafe_allow_html=True)
 
-    row2b.markdown(f"""
+    c4.markdown(f"""
     <div class="card">
       <div class="label">Recommendation</div>
       <div class="value">{rec}</div>
-      <div class="small">Mode: {mode}</div>
+      <div class="small">Adjusted signal: {adj_pct:.2f}%</div>
     </div>
     """, unsafe_allow_html=True)
 
     # Confidence + badges
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     colx, coly = st.columns([1.4, 1])
-
     with colx:
         st.markdown(f"**AI Confidence:** {conf:.1f}%")
         st.progress(confidence_progress(conf))
-        st.caption("Confidence reflects stability and historical error. With limited data windows, a simplified estimate is used.")
-
+        st.caption("Confidence reflects stability and historical error. With limited data windows, a simplified estimate may apply.")
     with coly:
         st.markdown(f"<span class='badge {risk_tone}'>{risk_text}</span>", unsafe_allow_html=True)
         st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
@@ -577,61 +609,37 @@ if st.session_state.start:
 
     st.markdown("---")
 
-    # Chart
-    st.subheader("Price Chart (Actual vs Predicted)")
-    future_date = current_date + pd.Timedelta(days=horizon)
+    # History chart (selected period)
+    st.subheader("Price Chart (History View)")
+    df_hist = df_full[(df_full["Date"].dt.date >= start_d) & (df_full["Date"].dt.date <= end_d)].copy()
+    if len(df_hist) < 5:
+        df_hist = df_full.tail(120).copy()
 
     fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(df_full["Date"], df_full["Close"], label="Actual Price")
-    ax.scatter(future_date, pred, s=90, label="Predicted Price")
-    ax.set_title(f"{company} | Actual vs Predicted")
+    ax.plot(df_hist["Date"], df_hist["Close"], label="Close")
+    ax.set_title(f"{company} | History")
     ax.set_xlabel("Date")
     ax.set_ylabel("Price (OMR)")
     ax.grid(True, alpha=0.3)
     ax.legend()
     st.pyplot(fig)
 
-    # Compare
-    st.subheader("Comparison (Omantel vs Ooredoo)")
-    df_om = process_stock_file(FILES["Omantel.xlsx"])
-    df_oo = process_stock_file(FILES["Ooredoo.xlsx"])
-
-    def quick_analyze(df_comp, name):
-        df_cut = df_comp.tail(max(120, horizon + 40)).copy()
-        p, m, Xc, yc, _ = predict_price(df_cut, horizon)
-        last = float(df_cut.iloc[-1]["Close"])
-        pct = (p - last) / last * 100 if last != 0 else 0.0
-        thr2 = volatility_threshold_pct(df_cut, horizon)
-        rec2, _ = recommendation_from_profit(pct, thr2)
-
-        if m is None or Xc is None or len(Xc) < 10:
-            cf = 45.0
-        else:
-            Xtr, Xte, ytr, yte = train_test_split(Xc, yc, test_size=0.2, shuffle=False)
-            cf = confidence_score(m, Xte, yte)
-
-        trend = "Up" if pct > 0 else "Down"
-        return {"Stock": name, "Expected %": pct, "Threshold %": thr2, "Reco": rec2, "Confidence %": cf, "Trend": trend}
-
-    r1 = quick_analyze(df_om, "Omantel")
-    r2 = quick_analyze(df_oo, "Ooredoo")
-
-    cmp_df = pd.DataFrame([r1, r2])
-    st.dataframe(cmp_df, use_container_width=True)
-
-    fig2, ax2 = plt.subplots(figsize=(6, 4))
-    ax2.bar(["Omantel", "Ooredoo"], [r1["Expected %"], r2["Expected %"]])
-    ax2.set_title("Expected Profit/Loss (%)")
-    ax2.set_ylabel("%")
-    ax2.grid(True, axis="y", alpha=0.3)
+    st.subheader("Actual vs Predicted (Latest Forecast)")
+    future_date = current_date + pd.Timedelta(days=horizon)
+    fig2, ax2 = plt.subplots(figsize=(10, 4))
+    ax2.plot(df_full["Date"], df_full["Close"], label="Actual Price")
+    ax2.scatter(future_date, pred, s=90, label="Predicted Price")
+    ax2.set_title(f"{company} | Forecast")
+    ax2.set_xlabel("Date")
+    ax2.set_ylabel("Price (OMR)")
+    ax2.grid(True, alpha=0.3)
+    ax2.legend()
     st.pyplot(fig2)
 
-    # Back
+    # Back button
     st.markdown('<div class="fixed-back">', unsafe_allow_html=True)
     if st.button("Back to Home"):
         st.session_state.start = False
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-
-
 
