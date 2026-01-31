@@ -13,19 +13,19 @@ from sklearn.metrics import mean_absolute_error
 st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 
 # =========================
-# Premium UI CSS (Responsive + No clipping)
+# Premium UI CSS (NO CLIPPING + Responsive)
 # =========================
 st.markdown("""
 <style>
-/* Avoid horizontal clipping on all screens */
+/* Prevent any horizontal scroll / clipping */
 html, body, [data-testid="stAppViewContainer"] { overflow-x: hidden !important; }
 
-.block-container { padding-top: 0.9rem; padding-bottom: 110px; }
+/* Give extra bottom space so content never hides behind browser bars */
+.block-container { padding-top: 0.9rem; padding-bottom: 180px !important; }
 
 :root{
   --brand:#0B2447;
   --brand2:#1A4D80;
-  --bg:#F6F9FC;
   --card:#FFFFFF;
   --muted:#6B7280;
   --border: rgba(26,77,128,0.18);
@@ -34,9 +34,7 @@ html, body, [data-testid="stAppViewContainer"] { overflow-x: hidden !important; 
   --bad:#DC2626;
 }
 
-html, body, [class*="css"]{
-  font-family: Arial, sans-serif;
-}
+html, body, [class*="css"]{ font-family: Arial, sans-serif; }
 
 /* Top Bar */
 .aras-topbar{
@@ -49,12 +47,7 @@ html, body, [class*="css"]{
   align-items:center;
   gap: 14px;
 }
-.aras-brand{
-  display:flex;
-  align-items:center;
-  gap: 12px;
-  min-width: 0;
-}
+.aras-brand{ display:flex; align-items:center; gap: 12px; min-width: 0; }
 .aras-logo{
   width:44px;height:44px;border-radius:14px;
   background: linear-gradient(135deg, var(--brand), var(--brand2));
@@ -62,34 +55,15 @@ html, body, [class*="css"]{
   color:white;font-weight:900;letter-spacing:2px;
   flex: 0 0 auto;
 }
-.aras-title{
-  font-weight:900;color:var(--brand);font-size:15px;
-  white-space: normal; line-height: 1.2;
-}
-.aras-sub{
-  font-weight:700;color:var(--muted);font-size:12px;margin-top:1px;
-  white-space: normal; line-height: 1.2;
-}
-.aras-links{
-  display:flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
-}
-.aras-links a{
-  text-decoration:none;color:var(--brand2);
-  font-weight:800;font-size:13px;
-}
+.aras-title{ font-weight:900;color:var(--brand);font-size:15px; white-space: normal; line-height: 1.2; }
+.aras-sub{ font-weight:700;color:var(--muted);font-size:12px;margin-top:1px; white-space: normal; line-height: 1.2; }
+.aras-links{ display:flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.aras-links a{ text-decoration:none;color:var(--brand2); font-weight:800;font-size:13px; }
 .aras-links a:hover{ color:#0D2B4F; }
 
 /* ✅ Mobile top bar */
 @media (max-width: 768px){
-  .aras-topbar{
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 12px 12px;
-  }
+  .aras-topbar{ flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
   .aras-title{ font-size: 14px; }
   .aras-sub{ font-size: 11px; }
   .aras-links{ justify-content: flex-start; }
@@ -125,25 +99,12 @@ html, body, [class*="css"]{
               linear-gradient(135deg, #FFFFFF, #F3F8FF);
   border:1px solid var(--border);
   border-radius:18px;
-  padding: 18px 18px;
+  padding: 18px;
 }
-.hero h1{
-  color: var(--brand);
-  font-size: 44px;
-  margin: 0;
-  font-weight: 900;
-  letter-spacing: 0.5px;
-}
-.hero p{
-  color: #0D2B4F;
-  font-size: 15px;
-  margin: 10px 0 0 0;
-  font-weight: 700;
-  opacity: 0.9;
-}
+.hero h1{ color: var(--brand); font-size: 44px; margin: 0; font-weight: 900; letter-spacing: 0.5px; }
+.hero p{ color: #0D2B4F; font-size: 15px; margin: 10px 0 0 0; font-weight: 700; opacity: 0.9; }
 .hero .tag{
-  display:inline-block;
-  margin-top: 12px;
+  display:inline-block; margin-top: 12px;
   background: rgba(26,77,128,0.10);
   border: 1px solid rgba(26,77,128,0.20);
   padding: 8px 12px;
@@ -151,17 +112,21 @@ html, body, [class*="css"]{
   color: var(--brand);
   font-weight: 900;
   font-size: 13px;
+  white-space: normal;
 }
 
-/* Cards */
+/* ✅ CARDS FIX (NO CLIP) */
 .card{
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 14px 14px;
+  padding: 14px;
   box-shadow: 0 10px 20px rgba(11,36,71,0.04);
-  min-height: 92px;
-  overflow: hidden; /* ✅ prevent text spill */
+
+  /* IMPORTANT: let it grow naturally */
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
 }
 .card .label{
   color: var(--muted);
@@ -176,7 +141,7 @@ html, body, [class*="css"]{
   color: #111827;
   margin-top: 6px;
   white-space: normal;
-  word-break: break-word; /* ✅ no cut */
+  word-break: break-word;
 }
 .card .small{
   color: var(--muted);
@@ -184,7 +149,8 @@ html, body, [class*="css"]{
   font-size: 12px;
   margin-top: 6px;
   white-space: normal;
-  word-break: break-word; /* ✅ no cut */
+  word-break: break-word;
+  line-height: 1.45;
 }
 
 /* Badges */
@@ -210,12 +176,12 @@ div.stButton > button{
   border-radius: 14px !important;
   border: 0 !important;
 }
-div.stButton > button:hover{ filter: brightness(0.95); }
 
-/* Smaller fonts on small screens for less clipping */
+/* Mobile font tuning */
 @media (max-width: 768px){
   .hero h1{ font-size: 34px; }
   .card .value{ font-size: 18px; }
+  .card .small{ font-size: 12px; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -252,14 +218,8 @@ st.markdown("""
 if "start" not in st.session_state:
     st.session_state.start = False
 
-# =========================
-# Data files
-# =========================
 FILES = {"Omantel.xlsx": "Omantel.xlsx", "Ooredoo.xlsx": "Ooredoo.xlsx"}
 
-# =========================
-# Helpers
-# =========================
 def process_stock_file(file):
     df = pd.read_excel(file)
     df = df[df.iloc[:, 0].astype(str).str.contains(r"\d", regex=True)]
@@ -295,7 +255,6 @@ def predict_price(df, horizon):
     X = X.iloc[:-horizon]
     y = y.iloc[:-horizon]
 
-    # fallback if data is too small
     if len(X) < 12 or len(y) < 12:
         last = float(df["Close"].iloc[-1])
         ma5 = float(df["MA5"].iloc[-1]) if "MA5" in df.columns else last
@@ -320,25 +279,12 @@ def confidence_score(model, X_test, y_test):
     conf = (0.6 * error_conf + 0.4 * stability) * 100
     return float(min(95, max(40, conf)))
 
-def risk_level_from_conf(conf):
-    if conf >= 75:
-        return "Low Risk", "good"
-    if conf >= 55:
-        return "Medium Risk", "warn"
-    return "High Risk", "bad"
-
 def dynamic_threshold_pct(df):
-    """
-    ✅ Fix "Always Hold":
-    threshold becomes dynamic based on recent volatility.
-    Higher volatility -> higher threshold needed
-    Lower volatility -> smaller threshold enough
-    """
     rets = df["Close"].pct_change().dropna()
     if len(rets) < 20:
-        return 0.8  # fallback threshold %
-    vol = float(rets.tail(60).std() * 100)  # volatility in %
-    thr = max(0.6, min(3.0, vol * 0.9))     # clamp between 0.6% and 3%
+        return 0.8
+    vol = float(rets.tail(60).std() * 100)
+    thr = max(0.6, min(3.0, vol * 0.9))
     return float(thr)
 
 def recommendation_from_profit(pct, thr):
@@ -347,6 +293,13 @@ def recommendation_from_profit(pct, thr):
     if pct < -thr:
         return "Avoid/Sell 📉", "bad"
     return "Hold ⚪", "warn"
+
+def risk_level_from_conf(conf):
+    if conf >= 75:
+        return "Low Risk", "good"
+    if conf >= 55:
+        return "Medium Risk", "warn"
+    return "High Risk", "bad"
 
 def period_dates(df, preset):
     mx = df["Date"].max().date()
@@ -373,12 +326,13 @@ if not st.session_state.start:
     <div class="hero">
       <h1>ARAS</h1>
       <p>AI-powered recommendations that help you save time, reduce noise, and invest smarter in the Oman market.</p>
-      <div class="tag">✅ Clear Signals • 📊 Smart Charts • 🤖 Confidence Score</div>
+      <div class="tag">✅ Clear Signals • 📊 Smart Charts • 🎯 Confidence Score</div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
-    colA, colB = st.columns([1.2, 1])
+
+    colA, colB = st.columns(2)
     with colA:
         st.markdown("""
         <div class="card">
@@ -407,16 +361,11 @@ if not st.session_state.start:
 if st.session_state.start:
     st.markdown("## 📌 Investor Dashboard")
 
-    # ✅ Best responsive solution in Streamlit: Sidebar for controls
     st.sidebar.markdown("### 🔧 Selections")
-
     company = st.sidebar.selectbox("Select Company", list(FILES.keys()))
     df_full = process_stock_file(FILES[company])
 
-    preset = st.sidebar.radio(
-        "Select Period",
-        ["Today", "1 Week", "1 Month", "1 Year", "3 Years", "Custom (Calendar)"],
-    )
+    preset = st.sidebar.radio("Select Period", ["Today", "1 Week", "1 Month", "1 Year", "3 Years", "Custom (Calendar)"])
 
     min_d = df_full["Date"].min().date()
     max_d = df_full["Date"].max().date()
@@ -427,12 +376,8 @@ if st.session_state.start:
         end_d = min(end_d, max_d)
         st.sidebar.caption(f"Selected range: {start_d} → {end_d}")
     else:
-        picked = st.sidebar.date_input(
-            "Pick Start & End",
-            value=[max_d - timedelta(days=30), max_d],
-            min_value=min_d,
-            max_value=max_d,
-        )
+        picked = st.sidebar.date_input("Pick Start & End", value=[max_d - timedelta(days=30), max_d],
+                                       min_value=min_d, max_value=max_d)
         if isinstance(picked, datetime):
             start_d, end_d = picked.date(), picked.date()
         else:
@@ -441,32 +386,23 @@ if st.session_state.start:
             start_d, end_d = end_d, start_d
         st.sidebar.caption(f"Selected range: {start_d} → {end_d}")
 
-    st.sidebar.info(
-        "Smart Tip: Short ranges = quick signals. For higher-confidence insights, choose a longer period with more history."
-    )
+    st.sidebar.info("Smart Tip: Short ranges = quick signals. For higher-confidence insights, choose a longer period with more history.")
 
-    # ✅ Back button always visible
     if st.sidebar.button("🏠 Back to Home"):
         st.session_state.start = False
         st.rerun()
 
-    # Build window
     df_win = df_full[(df_full["Date"].dt.date >= start_d) & (df_full["Date"].dt.date <= end_d)].copy()
     if len(df_win) < 20:
-        # keep the selected end date logic, but ensure enough data for model
         df_win = df_full.tail(160).copy()
 
-    # Horizon
     horizon = max(1, (pd.to_datetime(end_d) - pd.to_datetime(start_d)).days)
     pred, model, X, y, horizon = predict_price(df_win, horizon)
 
-    # ✅ current should be the close at the end of selected window (not always latest)
     base_close = float(df_win["Close"].iloc[-1])
     latest_close = float(df_full["Close"].iloc[-1])
-
     profit_pct = (pred - base_close) / base_close * 100 if base_close != 0 else 0.0
 
-    # ✅ dynamic threshold to avoid always Hold
     thr = dynamic_threshold_pct(df_win)
     rec, rec_tone = recommendation_from_profit(profit_pct, thr)
 
@@ -484,10 +420,6 @@ if st.session_state.start:
 
     risk_text, risk_tone = risk_level_from_conf(conf)
 
-    # =========================
-    # Results (Main area)
-    # =========================
-    # ✅ 2x2 cards (safe on laptop + mobile, no clipping)
     r1c1, r1c2 = st.columns(2)
     r2c1, r2c2 = st.columns(2)
 
@@ -538,7 +470,6 @@ if st.session_state.start:
 
     st.markdown("---")
 
-    # Charts
     st.subheader("📈 Price Chart (Actual vs Predicted)")
     future_date = df_win.iloc[-1]["Date"] + pd.Timedelta(days=horizon)
 
@@ -552,36 +483,5 @@ if st.session_state.start:
     ax.legend()
     st.pyplot(fig)
 
-    # Compare section
-    st.subheader("🆚 Comparison (Omantel vs Ooredoo)")
-    df_om = process_stock_file(FILES["Omantel.xlsx"])
-    df_oo = process_stock_file(FILES["Ooredoo.xlsx"])
-
-    def quick_analyze(df_comp, name):
-        df_cut = df_comp.tail(max(160, horizon + 60)).copy()
-        p, m, Xc, yc, _ = predict_price(df_cut, horizon)
-        last = float(df_cut["Close"].iloc[-1])
-        pct = (p - last) / last * 100 if last != 0 else 0.0
-        thr_local = dynamic_threshold_pct(df_cut)
-        if m is None or Xc is None or len(Xc) < 10:
-            cf = 45.0
-        else:
-            Xtr, Xte, ytr, yte = train_test_split(Xc, yc, test_size=0.2, shuffle=False)
-            cf = confidence_score(m, Xte, yte)
-        signal = "Buy" if pct > thr_local else ("Sell/Avoid" if pct < -thr_local else "Hold")
-        return {"Stock": name, "Expected %": round(pct, 2), "Threshold %": round(thr_local, 2), "Signal": signal, "Confidence %": round(cf, 1)}
-
-    r1 = quick_analyze(df_om, "Omantel")
-    r2 = quick_analyze(df_oo, "Ooredoo")
-
-    cmp_df = pd.DataFrame([r1, r2])
-    st.dataframe(cmp_df, use_container_width=True)
-
-    fig2, ax2 = plt.subplots(figsize=(6, 4))
-    ax2.bar(["Omantel", "Ooredoo"], [r1["Expected %"], r2["Expected %"]])
-    ax2.set_title("Expected Profit/Loss (%)")
-    ax2.set_ylabel("%")
-    ax2.grid(True, axis="y", alpha=0.3)
-    st.pyplot(fig2)
-
     st.success("🚀 With ARAS, you don’t just follow the market — you stay ahead of it.")
+
