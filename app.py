@@ -17,7 +17,6 @@ st.set_page_config(page_title="ARAS - Smart Portfolio", layout="wide")
 # =========================
 st.markdown("""
 <style>
-/* Layout */
 .block-container{
   padding-top: 1rem;
   padding-bottom: 90px;
@@ -42,18 +41,18 @@ html, body, [class*="css"]{
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-/* ✅ أهم تعديل: خلي أعمدة Streamlit تلتف (wrap) وما تنقص */
+/* ✅ wrap columns (prevents cut) */
 div[data-testid="stHorizontalBlock"]{
   flex-wrap: wrap !important;
   gap: 16px !important;
 }
 div[data-testid="column"]{
-  flex: 1 1 340px !important;   /* كل عمود له حد أدنى */
+  flex: 1 1 340px !important;
   min-width: 340px !important;
 }
 @media (max-width: 768px){
   div[data-testid="column"]{
-    min-width: 100% !important; /* على الجوال: عمود كامل */
+    min-width: 100% !important;
   }
 }
 
@@ -189,7 +188,7 @@ div[data-testid="column"]{
   min-height: 96px;
   width: 100%;
   margin-bottom: 12px;
-  overflow: hidden; /* ✅ يمنع قص داخلي */
+  overflow: hidden;
 }
 .card .label{
   color: var(--muted);
@@ -258,7 +257,7 @@ div.stButton > button:hover{ filter: brightness(0.95); }
 }
 .fixed-back button:hover{ background:#000 !important; }
 
-/* ✅ اكتب Open menu جنب سهم السايدبار (بدون شارة عائمة) */
+/* ✅ put "Open menu" near sidebar arrow */
 button[data-testid="collapsedControl"]::after,
 button[data-testid="stSidebarCollapsedControl"]::after,
 div[data-testid="collapsedControl"] button::after,
@@ -304,7 +303,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ✅ Fallback (مو عائم ولا يتحرك) — يظهر فقط كسطر عادي أعلى الصفحة
 st.caption("Open menu from the top-left arrow to choose company and period.")
 
 # =========================
@@ -382,10 +380,23 @@ def risk_level_from_conf(conf):
         return "Medium Risk", "warn"
     return "High Risk", "bad"
 
-def recommendation_from_profit(pct):
-    if pct > 1:
+# ✅ NEW: volatility-based threshold (percentage)
+def volatility_threshold_pct(df_ref, horizon_days):
+    # daily returns
+    rets = df_ref["Close"].pct_change().dropna()
+    if len(rets) < 15:
+        return 0.8  # fallback
+    daily_vol = float(rets.tail(60).std())  # e.g. 0.01 = 1%
+    # scale with sqrt(time)
+    scaled = daily_vol * np.sqrt(max(1, horizon_days)) * 100.0
+    # keep within reasonable range
+    return float(min(3.5, max(0.35, scaled * 0.9)))
+
+# ✅ NEW: recommendation uses dynamic threshold
+def recommendation_from_profit(pct, thr):
+    if pct > thr:
         return "Buy", "good"
-    if pct < -1:
+    if pct < -thr:
         return "Avoid/Sell", "bad"
     return "Hold", "warn"
 
@@ -481,7 +492,7 @@ if st.session_state.start:
 
     st.sidebar.info("Tip: Short ranges are fine for quick checks. Longer ranges can improve confidence.")
 
-    # Build window
+    # Build window (selected period)
     df_win = df_full[(df_full["Date"].dt.date >= start_d) & (df_full["Date"].dt.date <= end_d)].copy()
     if len(df_win) < 20:
         df_win = df_full.tail(120).copy()
@@ -490,10 +501,15 @@ if st.session_state.start:
     horizon = max(1, (pd.to_datetime(end_d) - pd.to_datetime(start_d)).days)
     pred, model, X, y, horizon = predict_price(df_win, horizon)
 
-    current = float(df_full.iloc[-1]["Close"])
+    # ✅ FIX: current must be end of selected period, not latest of file
+    current = float(df_win.iloc[-1]["Close"])
+    current_date = df_win.iloc[-1]["Date"]
+
     profit_pct = (pred - current) / current * 100 if current != 0 else 0.0
 
-    rec, rec_tone = recommendation_from_profit(profit_pct)
+    # ✅ FIX: volatility threshold
+    thr = volatility_threshold_pct(df_win, horizon)
+    rec, rec_tone = recommendation_from_profit(profit_pct, thr)
 
     if model is None:
         conf = 45.0
@@ -509,15 +525,15 @@ if st.session_state.start:
 
     risk_text, risk_tone = risk_level_from_conf(conf)
 
-    # ✅ Cards: still 2x2, لكن الآن wrap يمنع أي نقص
+    # Cards (wrap-safe)
     row1a, row1b = st.columns(2)
     row2a, row2b = st.columns(2)
 
     row1a.markdown(f"""
     <div class="card">
-      <div class="label">Current Price</div>
+      <div class="label">Selected Period Close</div>
       <div class="value">{current:.3f} OMR</div>
-      <div class="small">Latest close</div>
+      <div class="small">Date: {current_date.date()}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -533,7 +549,7 @@ if st.session_state.start:
     <div class="card">
       <div class="label">Expected Change</div>
       <div class="value">{profit_pct:.2f}%</div>
-      <div class="small">Based on the selected period</div>
+      <div class="small">Signal threshold: ±{thr:.2f}% (volatility-based)</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -563,7 +579,7 @@ if st.session_state.start:
 
     # Chart
     st.subheader("Price Chart (Actual vs Predicted)")
-    future_date = df_full.iloc[-1]["Date"] + pd.Timedelta(days=horizon)
+    future_date = current_date + pd.Timedelta(days=horizon)
 
     fig, ax = plt.subplots(figsize=(10, 4))
     ax.plot(df_full["Date"], df_full["Close"], label="Actual Price")
@@ -583,15 +599,19 @@ if st.session_state.start:
     def quick_analyze(df_comp, name):
         df_cut = df_comp.tail(max(120, horizon + 40)).copy()
         p, m, Xc, yc, _ = predict_price(df_cut, horizon)
-        last = float(df_comp.iloc[-1]["Close"])
+        last = float(df_cut.iloc[-1]["Close"])
         pct = (p - last) / last * 100 if last != 0 else 0.0
+        thr2 = volatility_threshold_pct(df_cut, horizon)
+        rec2, _ = recommendation_from_profit(pct, thr2)
+
         if m is None or Xc is None or len(Xc) < 10:
             cf = 45.0
         else:
             Xtr, Xte, ytr, yte = train_test_split(Xc, yc, test_size=0.2, shuffle=False)
             cf = confidence_score(m, Xte, yte)
+
         trend = "Up" if pct > 0 else "Down"
-        return {"Stock": name, "Expected %": pct, "Confidence %": cf, "Trend": trend}
+        return {"Stock": name, "Expected %": pct, "Threshold %": thr2, "Reco": rec2, "Confidence %": cf, "Trend": trend}
 
     r1 = quick_analyze(df_om, "Omantel")
     r2 = quick_analyze(df_oo, "Ooredoo")
@@ -606,11 +626,12 @@ if st.session_state.start:
     ax2.grid(True, axis="y", alpha=0.3)
     st.pyplot(fig2)
 
-    # Fixed Back to Home
+    # Back
     st.markdown('<div class="fixed-back">', unsafe_allow_html=True)
     if st.button("Back to Home"):
         st.session_state.start = False
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
+
 
 
